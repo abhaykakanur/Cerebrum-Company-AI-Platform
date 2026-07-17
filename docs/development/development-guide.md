@@ -1,0 +1,72 @@
+# Development Guide
+
+## Daily Workflow
+
+1. **Start infrastructure** (once per session): `scripts/start.sh`
+2. **Make your change**, following `docs/architecture/dependency-rules.md`
+   and `docs/architecture/coding-guidelines.md`.
+3. **Format and lint as you go**: `scripts/format.sh`, `scripts/lint.sh`
+   (or rely on your editor — see `.vscode/settings.json`, which runs
+   these on save).
+4. **Test**: `scripts/test.sh` for unit tests; `scripts/test.sh --all` for
+   the full suite (requires infrastructure running).
+5. **Validate before pushing**: `scripts/validate.sh` — runs the same
+   fast checks as the first stages of CI
+   (`docs/architecture/specification/97_CICD_Architecture.md`), so you
+   find problems locally, not after a push.
+
+## Working on the Backend
+
+- All backend code lives under `apps/backend/src/cerebrum/`, organized by
+  architectural layer (`domain/`, `application/`, `infrastructure/`, ...)
+  — see `docs/architecture/layer-responsibilities.md`.
+- No domain subpackages exist yet (e.g., no `domain/identity/`) — those
+  are added starting with Phase 2 (Identity Platform) per
+  `docs/architecture/specification/110_Implementation_Roadmap.md`. When
+  you add the first one, follow the same `domain/application/infrastructure`
+  triad pattern already established for the top-level layers.
+- Run backend-only checks: `uv run black apps/backend`, `uv run ruff check
+  apps/backend`, `uv run mypy apps/backend/src`, `uv run pytest
+  apps/backend/tests`.
+
+## Working on the Frontend
+
+- All frontend code lives under `apps/frontend/`. Every page and feature
+  is built exclusively from `apps/frontend/components/` per the
+  Design-System-First mandate
+  (`docs/architecture/specification/85_Frontend_Architecture.md`) — no
+  page may introduce a custom visual style outside the Design System.
+- Run frontend-only checks: `pnpm --filter @cerebrum/frontend lint`,
+  `pnpm --filter @cerebrum/frontend typecheck`, `pnpm --filter
+  @cerebrum/frontend test`.
+
+## Working on Shared Packages
+
+- A change to `packages/shared-types`, `packages/shared-config`, or
+  `packages/shared-utils` is immediately visible to every consumer via
+  pnpm's workspace linking — no publish step, no version bump needed for
+  local development.
+- Keep these packages small and dependency-light — see each package's own
+  `README.md` for its specific constraint.
+
+## Database Migrations
+
+Not applicable yet — no database schema exists at this milestone. Once
+Phase 3 (Knowledge Storage) begins, Alembic migrations
+(`docs/architecture/specification/32_Technology_Stack.md`) will be
+documented here.
+
+## Debugging
+
+- Backend: use `.vscode/launch.json`'s "Python: Backend" configuration,
+  or attach a debugger to `uv run` directly.
+- Frontend: use the Next.js dev server's built-in error overlay, or
+  `.vscode/launch.json`'s "Next.js: Frontend" configuration.
+- Infrastructure: `scripts/logs.sh <service>` — see
+  `docs/deployment/troubleshooting.md`.
+
+## Before Opening a Pull Request
+
+See `CONTRIBUTING.md` for the complete checklist (Description, Linked
+Requirement, Linked ADR if applicable, Testing Evidence, Screenshots for
+UI changes, Review Checklist, Approval).

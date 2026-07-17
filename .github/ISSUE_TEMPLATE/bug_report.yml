@@ -1,0 +1,65 @@
+name: Bug Report
+description: Report a defect in Cerebrum
+labels: ["type:bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing, check whether this is actually a known, tracked
+        ambiguity rather than a bug — see
+        `docs/architecture/specification/114_Open_Questions.md`.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear, concise description of the defect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead? If this traces to a specific CES requirement, cite its Requirement ID.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps, from a clean `scripts/setup.sh`, that reproduce this.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Backend
+        - Frontend
+        - Infrastructure
+        - Documentation
+        - CI/CD
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Docker version, Node/Python version, etc.
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Output from `scripts/logs.sh` or `scripts/doctor.sh` if infrastructure-related.
+      render: shell
+    validations:
+      required: false

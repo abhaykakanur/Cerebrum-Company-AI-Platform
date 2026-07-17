@@ -1,0 +1,34 @@
+# ==============================================================================
+# Cerebrum — Qdrant configuration (local development)
+#
+# Overrides Qdrant's default production.yaml with local-development-appropriate
+# settings. See docs/architecture/specification/42_Database_Responsibilities.md
+# for Qdrant's role as the authoritative vector datastore.
+#
+# Multi-tenancy note: payload-based tenant filtering
+# (docs/architecture/specification/46_Multi_Tenancy.md) is an application-layer
+# concern applied when collections are created in a later implementation
+# phase — no collection exists yet at this infrastructure-only milestone.
+# ==============================================================================
+
+log_level: INFO
+
+storage:
+  # Storage path inside the container; mapped to the named volume
+  # cerebrum-qdrant-data in docker-compose.yml.
+  storage_path: /qdrant/storage
+
+  # Snapshot support, reserved for the Backup Strategy
+  # (docs/architecture/specification/102_Backup_Recovery.md) once
+  # implemented in a later phase.
+  snapshots_path: /qdrant/storage/snapshots
+
+service:
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+  # Development mode: no API key required locally. Production deployments
+  # MUST set an API key — see docs/deployment/troubleshooting.md.
+  enable_cors: true
+
+telemetry_disabled: true

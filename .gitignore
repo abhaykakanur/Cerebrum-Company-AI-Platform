@@ -1,0 +1,90 @@
+# ==============================================================================
+# Cerebrum — Root .gitignore
+# Applies repository-wide. App-specific ignores live in apps/*/.gitignore
+# only where a pattern is not safely generalizable here.
+# ==============================================================================
+
+# --- Environment & Secrets ---------------------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+!**/fixtures/**/*.key
+secrets/
+.secrets/
+
+# --- Python (backend) ---------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+uv.lock.bak
+
+# --- Node / TypeScript (frontend, packages) -----------------------------------
+node_modules/
+.pnpm-store/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+coverage/
+.eslintcache
+
+# --- Package manager lockfile policy -------------------------------------------
+# pnpm-lock.yaml and uv.lock ARE committed (reproducible installs) — do not ignore.
+
+# --- Build artifacts & bundler output -------------------------------------------
+*.tgz
+*.tar.gz
+
+# --- Testing ---------------------------------------------------------------
+/coverage/
+/test-results/
+/playwright-report/
+/blob-report/
+
+# --- Logs -------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+pnpm-debug.log*
+
+# --- OS-specific ----------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Editor / IDE (non-shared) ------------------------------------------------
+.idea/
+*.swp
+*.swo
+*~
+# Note: .vscode/ is intentionally NOT ignored — shared editor config is tracked, see .vscode/README.md
+
+# --- Docker ------------------------------------------------------------------
+.docker/
+
+# --- Local override files ----------------------------------------------------
+*.local.yml
+*.local.yaml
+docker-compose.override.yml
+
+# --- Misc ---------------------------------------------------------------------
+.cache/
+tmp/
+*.tmp

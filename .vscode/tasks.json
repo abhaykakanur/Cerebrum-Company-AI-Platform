@@ -1,0 +1,69 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Infra: Start",
+      "type": "shell",
+      "command": "scripts/start.sh",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Infra: Stop",
+      "type": "shell",
+      "command": "scripts/stop.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Infra: Health Check",
+      "type": "shell",
+      "command": "scripts/doctor.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Infra: Logs (follow all)",
+      "type": "shell",
+      "command": "scripts/logs.sh",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Format All",
+      "type": "shell",
+      "command": "scripts/format.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint All",
+      "type": "shell",
+      "command": "scripts/lint.sh",
+      "problemMatcher": ["$eslint-stylish"]
+    },
+    {
+      "label": "Type Check All",
+      "type": "shell",
+      "command": "scripts/typecheck.sh",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Test: Unit (all)",
+      "type": "shell",
+      "command": "scripts/test.sh",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Validate (pre-push)",
+      "type": "shell",
+      "command": "scripts/validate.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: Dev Server",
+      "type": "shell",
+      "command": "pnpm --filter @cerebrum/frontend dev",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

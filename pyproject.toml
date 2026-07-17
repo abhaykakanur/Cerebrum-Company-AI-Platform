@@ -1,0 +1,70 @@
+[project]
+name = "cerebrum-workspace"
+version = "0.1.0"
+description = "Cerebrum — Enterprise Knowledge Intelligence Platform. Root uv workspace definition; the actual backend application lives in apps/backend."
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = ["apps/backend"]
+
+# ==============================================================================
+# Shared tool configuration.
+# Individual workspace members (apps/backend) inherit these unless they define
+# their own [tool.*] section, per uv/PEP 621 resolution order.
+# See docs/architecture/specification/99_Coding_Standards.md for the full
+# justification of every tool below.
+# ==============================================================================
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["apps/backend/src"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort (import sorting, also handled by isort below)
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+ignore = []
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["cerebrum"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+exclude = ["tests/"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["apps/backend/tests"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers"
+markers = [
+    "unit: fast, isolated tests with mocked dependencies",
+    "integration: tests against real infrastructure (database, search, graph, vector store, connectors, queues)",
+    "e2e: full end-to-end user journey tests",
+    "performance: latency and throughput measurement tests",
+    "ai_evaluation: AI grounding, citation, retrieval, and hallucination-rate evaluation tests",
+]

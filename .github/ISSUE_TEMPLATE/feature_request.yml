@@ -1,0 +1,46 @@
+name: Feature Request
+description: Propose new functionality
+labels: ["type:feature", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cerebrum is built against the CES (Cerebrum Engineering
+        Specification) — see
+        `docs/architecture/specification/README.md`. A feature request
+        should first check whether it's already specified (and simply not
+        yet implemented — see the Implementation Roadmap) or whether it
+        would require a genuine specification change (which needs an ADR,
+        not just an issue — see `docs/architecture/specification/09_Governance.md`).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: ces-reference
+    attributes:
+      label: CES Reference
+      description: Which CES requirement, domain, or document does this relate to? If none, explain why this is in scope.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope-check
+    attributes:
+      label: Scope Check
+      options:
+        - label: I've checked this isn't already covered by an existing CES requirement not yet implemented.
+          required: true
+        - label: I've checked this isn't already a tracked Open Question.
+          required: true

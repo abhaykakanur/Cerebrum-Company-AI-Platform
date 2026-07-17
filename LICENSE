@@ -1,0 +1,28 @@
+LICENSE — PLACEHOLDER, NOT YET FINALIZED
+==========================================
+
+Cerebrum's licensing terms have not yet been selected by the project's
+governing organization (see docs/architecture/specification/00_Project_Charter.md
+for project ownership context).
+
+This placeholder exists so that:
+
+  1. Every clone of this repository is explicit that no license grant is
+     currently in effect — this code is All Rights Reserved by default
+     under copyright law until a license is chosen and this file is replaced.
+  2. Tooling that expects a LICENSE file to exist (package registries,
+     OSS scanners, contributor tooling) does not silently assume an
+     unintended license.
+
+ACTION REQUIRED BEFORE PUBLIC RELEASE OR EXTERNAL DISTRIBUTION:
+
+  - The Architecture Owner (docs/architecture/specification/109_Project_Governance.md)
+    and project leadership must select a license (e.g., a proprietary
+    commercial license, or an open-source license such as Apache-2.0 or
+    MIT if any component is intended for open distribution) and replace
+    this file with the actual license text.
+  - Until that decision is made, this repository and its contents should
+    be treated as proprietary and confidential.
+
+This file is intentionally NOT a real license. Do not remove this notice
+without replacing it with an actual, reviewed license grant.

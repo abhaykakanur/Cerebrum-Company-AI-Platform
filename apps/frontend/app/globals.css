@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * No custom global styles beyond the Tailwind layers are added here.
+ * Per the Design-System-First mandate
+ * (docs/architecture/specification/85_Frontend_Architecture.md), every
+ * visual value is expected to come from Design Tokens
+ * (tailwind.config.ts) once populated — not from ad hoc CSS in this file.
+ */

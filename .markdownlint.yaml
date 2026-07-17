@@ -1,0 +1,24 @@
+# Markdownlint configuration for hand-authored, non-specification Markdown
+# (READMEs, docs/development/*, docs/deployment/*, etc.).
+# docs/architecture/specification/ is excluded (see .pre-commit-config.yaml)
+# since it predates this tooling and follows its own established structure.
+
+default: true
+
+# Allow long lines — prose and tables shouldn't be hard-wrapped.
+MD013: false
+
+# Allow inline HTML (used sparingly for badges/collapsible sections).
+MD033: false
+
+# Allow multiple headings with the same content (e.g., repeated "Purpose"
+# across sibling documents).
+MD024:
+  siblings_only: true
+
+# Require a single trailing newline, no more.
+MD047: true
+
+# Ordered lists: allow either style, don't force renumbering.
+MD029:
+  style: "ordered"

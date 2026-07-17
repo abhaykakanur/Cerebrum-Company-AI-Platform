@@ -1,0 +1,20 @@
+{
+  "name": "@cerebrum/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared ESLint configuration for every TypeScript package/app in the Cerebrum workspace.",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "next.js",
+    "library.js"
+  ],
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.12.0",
+    "@typescript-eslint/parser": "^8.12.0",
+    "eslint-config-prettier": "^9.1.0"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

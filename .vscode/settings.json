@@ -1,0 +1,75 @@
+{
+  // ==========================================================================
+  // Cerebrum — shared VS Code workspace settings.
+  // Committed so every contributor gets identical formatting/linting
+  // behavior in-editor, matching .pre-commit-config.yaml and the CI
+  // pipeline (docs/architecture/specification/97_CICD_Architecture.md).
+  // ==========================================================================
+
+  // --- Python ---------------------------------------------------------------
+  "python.defaultInterpreterPath": "${workspaceFolder}/apps/backend/.venv/bin/python",
+  "python.analysis.typeCheckingMode": "strict",
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["apps/backend/tests"],
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.ruff": "explicit"
+    }
+  },
+
+  // --- TypeScript / JavaScript ------------------------------------------------
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": { "source.fixAll.eslint": "explicit" }
+  },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // --- Markdown -------------------------------------------------------------
+  "[markdown]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.wordWrap": "on"
+  },
+
+  // --- YAML -----------------------------------------------------------------
+  "[yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // --- Editor-wide ------------------------------------------------------------
+  "editor.rulers": [88],
+  "editor.renderWhitespace": "trailing",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+
+  // --- File exclusions from search/explorer (kept in sync with .gitignore) ----
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/*.egg-info": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "docs/architecture/specification": false
+  },
+
+  // --- ESLint -----------------------------------------------------------------
+  "eslint.workingDirectories": [
+    { "pattern": "apps/frontend" },
+    { "pattern": "packages/*" }
+  ]
+}

@@ -1,0 +1,41 @@
+# Cerebrum CODEOWNERS
+#
+# NOTE: Team handles below (@cerebrum/*) are PLACEHOLDERS — no GitHub
+# teams exist yet for this repository. Replace with real team handles or
+# individual usernames once the Architecture Owner and module owners are
+# assigned per docs/architecture/specification/109_Project_Governance.md
+# and docs/architecture/module-ownership.md.
+#
+# Last matching pattern wins — more specific paths override broader ones,
+# listed broad-to-narrow below.
+
+# Default owner for anything not matched more specifically
+*                                   @cerebrum/architecture-owner
+
+# --- Specification (changes here require architecture review) ---------------
+/docs/architecture/specification/    @cerebrum/architecture-owner
+
+# --- Backend ------------------------------------------------------------
+/apps/backend/                        @cerebrum/backend
+
+# --- Frontend -------------------------------------------------------------
+/apps/frontend/                         @cerebrum/frontend
+
+# --- Shared packages ------------------------------------------------------
+/packages/                                @cerebrum/frontend
+
+# --- Infrastructure (Prompt 2 deliverable — do not modify without DevOps review) ---
+/infrastructure/                            @cerebrum/devops
+
+# --- Security-sensitive files --------------------------------------------
+/SECURITY.md                                  @cerebrum/security
+/.github/CODEOWNERS                             @cerebrum/architecture-owner
+/.pre-commit-config.yaml                          @cerebrum/devops
+/.env.example                                       @cerebrum/security
+
+# --- CI/CD (once implemented) --------------------------------------------
+/.github/workflows/                                   @cerebrum/devops
+
+# --- Governance-adjacent root files ----------------------------------------
+/CONTRIBUTING.md                                        @cerebrum/architecture-owner
+/CODE_OF_CONDUCT.md                                       @cerebrum/architecture-owner

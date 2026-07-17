@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Cerebrum Base",
+  // TypeScript Strict Mode is non-negotiable across every Cerebrum package
+  // — see docs/architecture/specification/99_Coding_Standards.md's
+  // Decision Rationale for Strict Typing. This base config is what every
+  // app/package-level tsconfig.json extends; no package may relax these
+  // settings.
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "resolveJsonModule": true
+  },
+  "exclude": ["node_modules", "dist", ".next", "coverage"]
+}

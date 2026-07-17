@@ -1,0 +1,32 @@
+name: Documentation Issue
+description: Report an error, gap, or unclear section in the documentation
+labels: ["type:documentation", "status:triage"]
+body:
+  - type: dropdown
+    id: doc-area
+    attributes:
+      label: Which documentation?
+      options:
+        - CES Specification (docs/architecture/specification/)
+        - Repository Architecture (docs/architecture/)
+        - Development Guides (docs/development/)
+        - Deployment Guides (docs/deployment/)
+        - Root README / CONTRIBUTING / etc.
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: doc-path
+    attributes:
+      label: File path
+      placeholder: docs/development/getting-started.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue
+    attributes:
+      label: What's wrong or missing?
+    validations:
+      required: true

@@ -1,0 +1,31 @@
+title: "[Architecture Proposal] "
+labels: ["status:needs-adr"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For proposing a change or addition to the CES itself, or
+        resolving one of the open questions in
+        `docs/architecture/specification/114_Open_Questions.md`. This is
+        a discussion venue for reaching consensus BEFORE the formal ADR
+        is written — see `docs/architecture/specification/09_Governance.md`.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What decision needs to be made, and why now?
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: Options considered
+    validations:
+      required: false
+  - type: input
+    id: related-question
+    attributes:
+      label: Related Open Question number (if any)
+      placeholder: "e.g., Open Question 72"
+    validations:
+      required: false

@@ -1,0 +1,90 @@
+# ==============================================================================
+# Cerebrum — pre-commit configuration
+#
+# Install once per clone:
+#   pre-commit install
+#
+# This mirrors, at commit time, the fast static-check stages (1–4) of the
+# CI/CD pipeline defined in
+# docs/architecture/specification/97_CICD_Architecture.md, so violations are
+# caught before push rather than after. It does not replace CI — the full
+# thirteen-stage pipeline still runs server-side.
+# ==============================================================================
+
+repos:
+  # --- General file hygiene ---------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-added-large-files
+        args: ["--maxkb=5000"]
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: detect-private-key
+
+  # --- Markdown validation -----------------------------------------------------
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.42.0
+    hooks:
+      - id: markdownlint
+        args: ["--config", ".markdownlint.yaml"]
+        exclude: ^docs/architecture/specification/
+
+  # --- Python: formatting, linting, import order, types -------------------------
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        files: ^apps/backend/
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.0
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^apps/backend/
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        files: ^apps/backend/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        files: ^apps/backend/src/
+        additional_dependencies: []
+
+  # --- TypeScript / Frontend: formatting, linting --------------------------------
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier (frontend + packages)
+        entry: pnpm exec prettier --write
+        language: system
+        files: \.(ts|tsx|js|jsx|json|css)$
+        exclude: ^docs/architecture/specification/
+
+      - id: eslint
+        name: eslint (frontend)
+        entry: pnpm --filter @cerebrum/frontend exec eslint --fix
+        language: system
+        files: ^apps/frontend/.*\.(ts|tsx)$
+
+  # --- Secret detection (defense in depth alongside Security Scanning CI stage) --
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.0
+    hooks:
+      - id: gitleaks
+
+default_language_version:
+  python: python3.12

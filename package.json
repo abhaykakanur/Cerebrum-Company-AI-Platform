@@ -1,0 +1,34 @@
+{
+  "name": "cerebrum",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cerebrum — Enterprise Knowledge Intelligence Platform. Root workspace for the TypeScript apps and shared packages; the Python backend is managed separately via uv (see apps/backend).",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "pnpm --filter @cerebrum/frontend dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean && rimraf node_modules",
+    "infra:up": "bash scripts/start.sh",
+    "infra:down": "bash scripts/stop.sh",
+    "infra:reset": "bash scripts/reset.sh",
+    "infra:logs": "bash scripts/logs.sh",
+    "infra:doctor": "bash scripts/doctor.sh",
+    "setup": "bash scripts/setup.sh",
+    "validate": "bash scripts/validate.sh"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.0",
+    "rimraf": "^6.0.0",
+    "typescript": "^5.6.0"
+  }
+}

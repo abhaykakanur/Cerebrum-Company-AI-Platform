@@ -1,0 +1,248 @@
+# ==============================================================================
+# Cerebrum — Local Infrastructure
+#
+# Provisions the six datastores of the Canonical Storage Model
+# (docs/architecture/specification/41_Data_Architecture.md,
+#  docs/architecture/specification/42_Database_Responsibilities.md):
+# PostgreSQL, Neo4j, Qdrant, Redis, MinIO, OpenSearch.
+#
+# This file provisions INFRASTRUCTURE ONLY. No application service is
+# defined here — the backend/frontend app containers are added in a later
+# implementation phase per docs/architecture/specification/110_Implementation_Roadmap.md.
+#
+# Usage: see scripts/start.sh, scripts/stop.sh, scripts/reset.sh,
+# scripts/logs.sh, scripts/doctor.sh at the repository root, or
+# docs/deployment/local-development.md for the full guide.
+#
+# Run from the repository root so the root .env is picked up:
+#   docker compose -f infrastructure/docker/docker-compose.yml --env-file .env up -d
+# ==============================================================================
+
+name: cerebrum
+
+networks:
+  cerebrum-network:
+    name: cerebrum-network
+    driver: bridge
+    # A single dedicated bridge network gives every service predictable,
+    # internal-DNS-resolvable service names (e.g. "postgres", "neo4j") per
+    # docs/deployment/networking-overview.md. No service is otherwise
+    # reachable from outside this network except via the explicit host
+    # port mappings below.
+
+volumes:
+  cerebrum-postgres-data:
+    name: cerebrum-postgres-data
+  cerebrum-neo4j-data:
+    name: cerebrum-neo4j-data
+  cerebrum-neo4j-logs:
+    name: cerebrum-neo4j-logs
+  cerebrum-neo4j-plugins:
+    name: cerebrum-neo4j-plugins
+  cerebrum-neo4j-import:
+    name: cerebrum-neo4j-import
+  cerebrum-redis-data:
+    name: cerebrum-redis-data
+  cerebrum-qdrant-data:
+    name: cerebrum-qdrant-data
+  cerebrum-minio-data:
+    name: cerebrum-minio-data
+  cerebrum-opensearch-data:
+    name: cerebrum-opensearch-data
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL — authoritative relational datastore
+  # docs/architecture/specification/42_Database_Responsibilities.md
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: cerebrum-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cerebrum}
+      POSTGRES_USER: ${POSTGRES_USER:-cerebrum}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      TZ: UTC
+      PGTZ: UTC
+      # UTF-8 is Postgres's default server-side encoding for the alpine image;
+      # made explicit here for clarity and to satisfy the CIS requirement.
+      LANG: en_US.utf8
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - cerebrum-postgres-data:/var/lib/postgresql/data
+      # Initialization support only — no schemas, no tables are created here.
+      # See infrastructure/docker/init/postgres/ for what runs on first boot.
+      - ./init/postgres:/docker-entrypoint-initdb.d:ro
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cerebrum} -d ${POSTGRES_DB:-cerebrum}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # Neo4j — authoritative relationship datastore (Knowledge Graph)
+  # ----------------------------------------------------------------------------
+  neo4j:
+    image: neo4j:5-community
+    container_name: cerebrum-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?NEO4J_PASSWORD must be set in .env}
+      # APOC is provisioned proactively for future graph-extraction and
+      # traversal features (docs/architecture/specification/35_Domain_Architecture.md's
+      # Knowledge Graph Domain) — not used by any code yet at this milestone.
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474" # Neo4j Browser
+      - "${NEO4J_PORT:-7687}:7687"      # Bolt protocol
+    volumes:
+      - cerebrum-neo4j-data:/data
+      - cerebrum-neo4j-logs:/logs
+      - cerebrum-neo4j-plugins:/plugins
+      - cerebrum-neo4j-import:/var/lib/neo4j/import
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -O /dev/null -q http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ----------------------------------------------------------------------------
+  # Redis — cache, sessions, rate limits, Celery broker
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: cerebrum-redis
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--requirepass", "${REDIS_PASSWORD:-changeme-local-only}"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - cerebrum-redis-data:/data
+      - ./configs/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-changeme-local-only} ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ----------------------------------------------------------------------------
+  # Qdrant — authoritative vector datastore
+  # ----------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: cerebrum-qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"   # HTTP / REST
+      - "${QDRANT_GRPC_PORT:-6334}:6334" # gRPC
+    volumes:
+      - cerebrum-qdrant-data:/qdrant/storage
+      # Mount only the specific config file (not the whole /qdrant/config
+      # directory) so we don't shadow other files the image expects there.
+      - ./configs/qdrant/config.yaml:/qdrant/config/production.yaml:ro
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '(echo > /dev/tcp/localhost/6333) 2>/dev/null'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ----------------------------------------------------------------------------
+  # MinIO — authoritative binary object storage (S3-API-compatible)
+  # ----------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    container_name: cerebrum-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in .env}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"     # S3 API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001" # Web console
+    volumes:
+      - cerebrum-minio-data:/data
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # One-shot bucket-initialization job. Runs the MinIO Client (mc) to create
+  # the application bucket, then exits — it is not a long-running service.
+  minio-init:
+    image: minio/mc:latest
+    container_name: cerebrum-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:?MINIO_ACCESS_KEY must be set in .env}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:?MINIO_SECRET_KEY must be set in .env}
+      MINIO_BUCKET: ${MINIO_BUCKET:-cerebrum-documents}
+    volumes:
+      - ./init/minio:/init:ro
+    networks:
+      - cerebrum-network
+    entrypoint: ["/bin/sh", "/init/create-buckets.sh"]
+    restart: "no"
+
+  # ----------------------------------------------------------------------------
+  # OpenSearch — keyword/hybrid search engine
+  # ----------------------------------------------------------------------------
+  opensearch:
+    image: opensearchproject/opensearch:2
+    container_name: cerebrum-opensearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      # Security plugin disabled for LOCAL DEVELOPMENT ONLY — see
+      # docs/deployment/troubleshooting.md and
+      # docs/architecture/specification/46_Multi_Tenancy.md / Open Question 55
+      # (OpenSearch's tenant-isolation treatment is not yet formalized).
+      # Staging/Production configuration is explicitly out of scope for this
+      # milestone and MUST enable the security plugin before any non-local use.
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "${OPENSEARCH_PORT:-9200}:9200"
+      - "${OPENSEARCH_PERF_PORT:-9600}:9600" # Performance Analyzer
+    volumes:
+      - cerebrum-opensearch-data:/usr/share/opensearch/data
+    networks:
+      - cerebrum-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s

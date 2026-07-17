@@ -1,0 +1,27 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "ms-python.mypy-type-checker",
+
+    // TypeScript / Frontend
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+
+    // Docker / YAML
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+
+    // Markdown
+    "davidanson.vscode-markdownlint",
+
+    // General
+    "editorconfig.editorconfig",
+    "eamodio.gitlens",
+    "streetsidesoftware.code-spell-checker"
+  ],
+  "unwantedRecommendations": []
+}

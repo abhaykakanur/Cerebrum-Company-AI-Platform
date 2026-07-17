@@ -1,0 +1,64 @@
+{
+  "name": "Cerebrum",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  // Docker-outside-of-Docker lets `docker compose` (run from inside the
+  // devcontainer) control the *host's* Docker daemon, so
+  // scripts/start.sh works identically here as on a local machine — see
+  // docs/deployment/local-development.md.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false
+    }
+  },
+
+  "forwardPorts": [
+    3000, 8000,
+    5432, 7474, 7687, 6379, 6333, 6334, 9000, 9001, 9200, 9600
+  ],
+  "portsAttributes": {
+    "3000": { "label": "Frontend (Next.js)" },
+    "8000": { "label": "Backend (FastAPI) — not yet implemented" },
+    "5432": { "label": "PostgreSQL" },
+    "7474": { "label": "Neo4j Browser" },
+    "7687": { "label": "Neo4j Bolt" },
+    "6379": { "label": "Redis" },
+    "6333": { "label": "Qdrant HTTP" },
+    "6334": { "label": "Qdrant gRPC" },
+    "9000": { "label": "MinIO API" },
+    "9001": { "label": "MinIO Console" },
+    "9200": { "label": "OpenSearch" },
+    "9600": { "label": "OpenSearch Performance Analyzer" }
+  },
+
+  "postCreateCommand": "bash scripts/setup.sh",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.black-formatter",
+        "charliermarsh.ruff",
+        "ms-python.mypy-type-checker",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "davidanson.vscode-markdownlint",
+        "editorconfig.editorconfig"
+      ],
+      // Reuse the same shared settings every contributor gets locally —
+      // see .vscode/settings.json (this repo's settings.json is applied
+      // automatically since the devcontainer opens the repo root).
+      "settings": {}
+    }
+  },
+
+  "remoteUser": "vscode"
+}

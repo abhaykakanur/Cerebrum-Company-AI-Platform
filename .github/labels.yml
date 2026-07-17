@@ -1,0 +1,68 @@
+# Cerebrum label taxonomy.
+#
+# This file is the declarative source of truth for repository labels. It
+# is not yet wired to an automated sync workflow — "no CI implementation
+# yet" per this milestone's scope (see .github/workflows/ci.yml, which is
+# itself only a manually-triggered placeholder). Apply these manually via
+# the GitHub UI or `gh label create` until label-sync automation exists.
+
+# --- Type ---------------------------------------------------------------
+- name: "type:bug"
+  color: "d73a4a"
+  description: "A defect in existing functionality"
+- name: "type:feature"
+  color: "a2eeef"
+  description: "New functionality"
+- name: "type:documentation"
+  color: "0075ca"
+  description: "Documentation only"
+- name: "type:chore"
+  color: "fef2c0"
+  description: "Tooling, dependencies, maintenance"
+- name: "type:security"
+  color: "b60205"
+  description: "Security-relevant — see SECURITY.md for private reporting"
+
+# --- Status ---------------------------------------------------------------
+- name: "status:triage"
+  color: "ededed"
+  description: "Not yet reviewed"
+- name: "status:blocked"
+  color: "e4e669"
+  description: "Blocked on a dependency or decision"
+- name: "status:in-progress"
+  color: "0e8a16"
+  description: "Actively being worked on"
+- name: "status:needs-adr"
+  color: "5319e7"
+  description: "Requires an Architecture Decision Record before proceeding — see docs/architecture/specification/09_Governance.md"
+
+# --- Component (mirrors .github/CODEOWNERS) ------------------------------
+- name: "component:backend"
+  color: "1d76db"
+  description: "apps/backend"
+- name: "component:frontend"
+  color: "1d76db"
+  description: "apps/frontend or packages/*"
+- name: "component:infrastructure"
+  color: "1d76db"
+  description: "infrastructure/"
+- name: "component:ces"
+  color: "1d76db"
+  description: "docs/architecture/specification/ — the CES itself"
+
+# --- Priority ---------------------------------------------------------------
+- name: "priority:critical"
+  color: "b60205"
+  description: "Blocking, address immediately"
+- name: "priority:high"
+  color: "d93f0b"
+- name: "priority:medium"
+  color: "fbca04"
+- name: "priority:low"
+  color: "c2e0c6"
+
+# --- Good First Issue -------------------------------------------------------
+- name: "good-first-issue"
+  color: "7057ff"
+  description: "Suitable for a first-time contributor"
