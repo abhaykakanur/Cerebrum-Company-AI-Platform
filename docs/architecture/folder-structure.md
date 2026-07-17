@@ -1,31 +1,35 @@
 # Folder Structure
 
-Complete, annotated repository tree as of Repository Foundation +
-Infrastructure Foundation. Directories that are currently empty of code
-(structural placeholders for future work) are marked accordingly — each
-such directory contains a `README.md` explaining what belongs there and
-why it's empty now.
+Complete, annotated repository tree as of the Enterprise Data &
+Infrastructure Foundation milestone (Phase 1, Prompt 4). Directories
+that are still empty of code (structural placeholders for future
+*business* work — no domain has been implemented yet) are marked
+accordingly — each such directory contains a `README.md` explaining what
+belongs there and why it's empty now.
 
 ```
 cerebrum/
 ├── apps/
 │   ├── backend/
+│   │   ├── alembic/                # Migration environment (empty versions/ — no ORM model yet)
+│   │   ├── alembic.ini
 │   │   ├── src/cerebrum/
-│   │   │   ├── api/              # FastAPI routers (empty — no endpoints yet)
-│   │   │   ├── application/       # Use cases, command/query handlers (empty)
-│   │   │   ├── config/             # Settings loading (empty)
-│   │   │   ├── core/                 # Shared kernel: base types, error taxonomy, DI root (empty)
-│   │   │   ├── dependencies/          # FastAPI DI providers (empty)
-│   │   │   ├── domain/                 # Entities, aggregates, domain services (empty)
-│   │   │   ├── events/                  # Domain events (empty)
-│   │   │   ├── infrastructure/            # Adapters: DB, LLM, secrets, etc. (empty)
-│   │   │   ├── middleware/                 # Auth/tenant/tracing middleware (empty)
-│   │   │   ├── repositories/                # Repository adapter implementations (empty)
-│   │   │   ├── services/                     # Cross-domain composed services (empty)
-│   │   │   ├── shared/                         # Cross-cutting, non-domain utilities (empty)
-│   │   │   ├── utils/                            # Generic, dependency-free helpers (empty)
-│   │   │   └── workers/                            # Background Processing workers (empty)
-│   │   ├── tests/{unit,integration,e2e,performance,ai_evaluation}/  # empty
+│   │   │   ├── api/              # FastAPI routers: health, /api/v1, response envelope schemas
+│   │   │   ├── application/       # Use cases, command/query handlers (empty — no business use case yet)
+│   │   │   ├── config/             # Typed, validated, environment-driven settings (populated)
+│   │   │   ├── core/                 # Application Factory, lifecycle, logging, exception handlers (populated)
+│   │   │   ├── dependencies/          # FastAPI DI providers: settings, logger, state, infra clients
+│   │   │   ├── domain/                 # Entities, aggregates, domain services (empty — no domain yet)
+│   │   │   ├── events/                  # DomainEvent base + in-process EventDispatcher (interfaces only)
+│   │   │   ├── infrastructure/            # DB/cache/graph/vector/storage/search client managers (populated)
+│   │   │   ├── middleware/                 # Request ID/Correlation ID/context/timing/logging pipeline (populated)
+│   │   │   ├── repositories/                # Abstract CRUD/pagination/sort/filter/soft-delete contracts (populated — no concrete repository yet)
+│   │   │   ├── services/                     # Cross-domain composed services (empty — no service yet)
+│   │   │   ├── shared/                         # Error taxonomy (shared/errors/) + future cross-cutting utilities
+│   │   │   ├── utils/                            # Clock, UUID generation (populated)
+│   │   │   ├── workers/                            # Worker/Job/Queue/Scheduler interfaces only — no implementation
+│   │   │   └── main.py                               # ASGI entrypoint — delegates to core.factory only
+│   │   ├── tests/{unit,integration,e2e,performance,ai_evaluation}/  # unit/ has platform + infrastructure tests; rest empty
 │   │   ├── pyproject.toml
 │   │   └── README.md
 │   └── frontend/
@@ -58,6 +62,7 @@ cerebrum/
 ├── docs/
 │   ├── architecture/           # This directory
 │   │   ├── specification/        # The complete CES (108 documents)
+│   │   ├── infrastructure/         # Database/connection-lifecycle/transaction/repository/migration guides
 │   │   └── adrs/                   # Future implementation-phase ADRs (ADR-021+)
 │   ├── development/                  # This document's siblings
 │   ├── deployment/                     # Infrastructure/deployment guides
@@ -83,7 +88,17 @@ cerebrum/
 
 ## Why So Many Empty, README-Only Directories
 
-Every currently-empty directory exists because the CES's architecture
+`domain/`, `application/`, and `services/` remain documentation-only:
+they hold business logic, and no business domain has been implemented
+yet (see CIS Phase 1 Prompt 4's Non-Objectives). `api/`, `config/`,
+`core/`, `dependencies/`, `events/`, `middleware/`, `shared/`, `utils/`,
+`infrastructure/`, and `repositories/` are now populated — they hold the
+reusable platform every future domain builds on, per that same prompt's
+Primary Objectives. `infrastructure/` and `repositories/` specifically
+hold *connection management and contracts*, not business queries or
+concrete repositories — see `docs/architecture/infrastructure/README.md`.
+
+Every one of these directories exists because the CES's architecture
 already specifies it belongs there (see
 `docs/architecture/specification/33_Directory_Structure.md` for the
 backend's originally-specified layout, adapted slightly at

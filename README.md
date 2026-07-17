@@ -22,9 +22,17 @@ implements; it does not redesign it. See
 for the full specification, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 what that means for how you work in this repository.
 
-**Current status:** Repository Foundation. No business functionality is
-implemented yet — this is the engineering scaffold every future
-implementation phase builds on. See
+**Current status:** Enterprise Data & Infrastructure Foundation. The
+backend is a running FastAPI application (typed configuration, DI,
+middleware pipeline, structured logging, centralized exception handling)
+that connects to all six datastores (PostgreSQL, Redis, Neo4j, Qdrant,
+MinIO, OpenSearch) at startup, reports real per-datastore health, and
+provides the Unit of Work and Repository Foundation patterns — with no
+business functionality yet. See
+[`apps/backend/README.md`](apps/backend/README.md) and
+[`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md).
+This is the engineering scaffold every future implementation phase
+builds on. See
 [`docs/architecture/specification/110_Implementation_Roadmap.md`](docs/architecture/specification/110_Implementation_Roadmap.md)
 for what comes next.
 
@@ -66,9 +74,10 @@ This installs dependencies for both workspaces, provisions your local
 `.env`, and starts the infrastructure stack. Then:
 
 ```bash
-scripts/doctor.sh          # verify everything is healthy
-pnpm --filter @cerebrum/frontend dev   # frontend dev server
-uv run pytest apps/backend/tests       # backend tests
+scripts/doctor.sh                          # verify infrastructure is healthy
+pnpm --filter @cerebrum/frontend dev       # frontend dev server
+uv run uvicorn cerebrum.main:app --reload  # backend dev server
+uv run pytest apps/backend/tests           # backend tests
 ```
 
 See [`docs/development/getting-started.md`](docs/development/getting-started.md)
@@ -94,6 +103,8 @@ for the architectural justification behind every choice.
 | Get my environment running | [`docs/development/getting-started.md`](docs/development/getting-started.md) |
 | Understand how this repo is organized | [`docs/architecture/repository-architecture.md`](docs/architecture/repository-architecture.md) |
 | Know what I can and can't import from where | [`docs/architecture/dependency-rules.md`](docs/architecture/dependency-rules.md) |
+| Understand how backend dependency injection works | [`docs/architecture/dependency-injection.md`](docs/architecture/dependency-injection.md) |
+| Understand the database/cache/graph/vector/storage/search clients | [`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md) |
 | Run local infrastructure | [`docs/deployment/local-development.md`](docs/deployment/local-development.md) |
 | Contribute a change | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Report a security issue | [`SECURITY.md`](SECURITY.md) |

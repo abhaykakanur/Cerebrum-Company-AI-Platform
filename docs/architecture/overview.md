@@ -39,7 +39,12 @@ into it.
 
 ## Current Implementation Status
 
-Repository Foundation and Infrastructure Foundation only — see the root
-`README.md`'s status note. No domain has been implemented yet.
-`docs/architecture/module-ownership.md` will be updated as each domain is
-added.
+Repository Foundation, Infrastructure Foundation (Docker Compose),
+Enterprise Backend Platform Foundation, and Enterprise Data &
+Infrastructure Foundation only — see the root `README.md`'s status note.
+The backend now runs (typed configuration, DI, middleware, logging,
+exception handling, health endpoints) and connects to all six datastores
+at startup with retry and graceful degradation — see
+`apps/backend/README.md` and `docs/architecture/infrastructure/` — but no
+business domain has been implemented yet. `docs/architecture/module-ownership.md`
+will be updated as each domain is added.

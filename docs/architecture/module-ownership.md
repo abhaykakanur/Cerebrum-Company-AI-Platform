@@ -17,7 +17,8 @@ same granularity.
 
 ## Current State
 
-No domain has been implemented yet (Repository Foundation milestone). The
+No domain has been implemented yet (Enterprise Backend Platform
+Foundation milestone — see `apps/backend/README.md`). The
 table below is a template, populated as each domain lands, mirroring
 `docs/architecture/specification/106_Requirement_Traceability.md`'s
 domain list.

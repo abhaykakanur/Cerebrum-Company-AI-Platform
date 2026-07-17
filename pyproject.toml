@@ -61,6 +61,10 @@ minversion = "8.0"
 testpaths = ["apps/backend/tests"]
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
+# Auto so `async def test_...` functions (e.g. testing
+# cerebrum.infrastructure's async client managers, Phase 1 Prompt 4) run
+# without an explicit @pytest.mark.asyncio on every one of them.
+asyncio_mode = "auto"
 markers = [
     "unit: fast, isolated tests with mocked dependencies",
     "integration: tests against real infrastructure (database, search, graph, vector store, connectors, queues)",

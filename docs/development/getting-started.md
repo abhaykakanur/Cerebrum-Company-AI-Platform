@@ -43,6 +43,9 @@ something doesn't come up cleanly.
 # Frontend dev server (http://localhost:3000 — a placeholder page at this milestone)
 pnpm --filter @cerebrum/frontend dev
 
+# Backend dev server (http://localhost:8000 — platform endpoints only, see apps/backend/README.md)
+uv run uvicorn cerebrum.main:app --reload
+
 # Backend unit tests
 uv run pytest apps/backend/tests -m unit
 
@@ -50,16 +53,22 @@ uv run pytest apps/backend/tests -m unit
 scripts/validate.sh
 ```
 
+With the backend running, `curl http://localhost:8000/health` and
+`http://localhost:8000/api/v1/docs` should both respond.
+
 ## What You Should See
 
-At this point in the project (Repository Foundation), there is no
-application functionality yet — no login, no dashboard, no AI chat. What
-you should see:
+At this point in the project (Enterprise Backend Platform Foundation),
+there is no *business* functionality yet — no login, no dashboard, no AI
+chat. What you should see:
 
 - The frontend serves a placeholder page confirming the build pipeline
   works.
-- The backend package installs and imports cleanly with no errors.
-- All six infrastructure services report healthy via `scripts/doctor.sh`.
+- The backend starts, serves `/health`, `/live`, `/ready`, and
+  `/api/v1/docs`, and every backend platform unit test passes.
+- All six infrastructure services report healthy via `scripts/doctor.sh`
+  — though the backend does not yet connect to any of them (`/health`
+  reports each as `not_configured`; see `apps/backend/README.md`).
 - `scripts/validate.sh` passes with zero lint warnings.
 
 If all of that is true, your environment is correctly set up. See
