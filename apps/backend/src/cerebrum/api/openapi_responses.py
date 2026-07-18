@@ -27,6 +27,11 @@ STANDARD_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
         "model": ErrorResponse,
         "description": "The requested resource does not exist.",
     },
+    409: {
+        "model": ErrorResponse,
+        "description": "The request conflicts with the resource's current state "
+        "(duplicate name, duplicate checksum, or a concurrent modification).",
+    },
     422: {"model": ErrorResponse, "description": "Request validation failed."},
     429: {
         "model": ErrorResponse,

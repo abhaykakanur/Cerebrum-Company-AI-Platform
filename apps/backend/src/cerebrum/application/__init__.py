@@ -15,6 +15,16 @@ docs/architecture/specification/110_Implementation_Roadmap.md), and
 introducing one now — for two stable, deterministic security
 primitives unlikely to be swapped — would be exactly the kind of
 premature abstraction docs/architecture/coding-guidelines.md warns
-against. Every ``application/`` service still takes its dependencies via
-constructor injection, never instantiating them itself.
+against. ``application/knowledge/`` (CIS Phase 2 Prompt 2) extends the
+same exception one step further:
+``cerebrum.application.knowledge.upload_service.UploadService`` depends
+directly on ``cerebrum.infrastructure.storage.files``'s
+``FileUploader`` Protocol and
+``cerebrum.infrastructure.security.virus_scan``'s ``VirusScanner``
+Protocol — both are already the *ports themselves* (Protocol interfaces
+Phase 1 Prompt 6/Phase 2 Prompt 2 built exactly for this), not a
+concrete infrastructure class, so depending on them directly is the
+intended usage, not a layering shortcut. Every ``application/`` service
+still takes its dependencies via constructor injection, never
+instantiating them itself.
 """

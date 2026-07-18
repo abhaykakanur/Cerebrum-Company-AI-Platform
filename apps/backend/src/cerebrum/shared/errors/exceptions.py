@@ -283,3 +283,70 @@ class RateLimitExceededException(PlatformException):
             context={**(context or {}), "retry_after_seconds": retry_after_seconds},
             cause=cause,
         )
+
+
+class NotFoundException(PlatformException):
+    """The requested resource does not exist, or exists but is not
+    visible to the caller (e.g. a soft-deleted row, or a row belonging
+    to another tenant/workspace — see
+    docs/architecture/security/multi-tenancy-guide.md: this codebase
+    never distinguishes "doesn't exist" from "not yours to see" in the
+    response, to avoid leaking which resource IDs are valid across a
+    tenant boundary). First added for CIS Phase 2 Prompt 1's business
+    entities (Folder, Document, ...) — nothing in Phase 1 needed a 404
+    business-entity-not-found response.
+    """
+
+    category = ErrorCategory.APPLICATION
+    http_status = 404
+
+    def __init__(
+        self,
+        message: str = "The requested resource was not found.",
+        *,
+        error_code: str | None = None,
+        context: dict[str, Any] | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            error_code=error_code,
+            severity=ErrorSeverity.LOW,
+            retryable=False,
+            context=context,
+            cause=cause,
+        )
+
+
+class ConflictException(PlatformException):
+    """The request conflicts with the resource's current state — a
+    duplicate name where uniqueness is required, a duplicate file
+    checksum (CIS Phase 2 Prompt 2's Duplicate Checksum validation), or
+    a concurrent modification detected by optimistic locking (see
+    cerebrum.infrastructure.database.models.mixins.OptimisticLockMixin).
+    Retryable in the optimistic-locking case specifically (reload and
+    retry the operation); not retryable for a genuine duplicate-name
+    conflict, which is why this class leaves ``retryable`` caller-supplied
+    rather than fixed.
+    """
+
+    category = ErrorCategory.APPLICATION
+    http_status = 409
+
+    def __init__(
+        self,
+        message: str = "The request conflicts with the current state of the resource.",
+        *,
+        error_code: str | None = None,
+        retryable: bool = False,
+        context: dict[str, Any] | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            error_code=error_code,
+            severity=ErrorSeverity.LOW,
+            retryable=retryable,
+            context=context,
+            cause=cause,
+        )

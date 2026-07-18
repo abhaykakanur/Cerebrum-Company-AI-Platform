@@ -17,6 +17,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from cerebrum.config.api import APISettings
 from cerebrum.config.application import ApplicationSettings
 from cerebrum.config.database import PostgresSettings
+from cerebrum.config.documents import DocumentSettings
 from cerebrum.config.infrastructure import InfrastructureSettings
 from cerebrum.config.logging import LoggingSettings
 from cerebrum.config.minio import MinIOSettings
@@ -71,6 +72,7 @@ class Settings(BaseSettings):
     opensearch: OpenSearchSettings = Field(default_factory=OpenSearchSettings)
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
     monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
+    documents: DocumentSettings = Field(default_factory=DocumentSettings)
 
     @model_validator(mode="after")
     def _validate_for_environment(self) -> "Settings":

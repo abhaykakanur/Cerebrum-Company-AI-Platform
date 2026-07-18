@@ -11,6 +11,7 @@ build its own ad hoc error response.
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm.exc import StaleDataError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from cerebrum.api.schemas.envelope import ErrorDetail, ErrorResponse
@@ -130,6 +131,29 @@ async def handle_http_exception(request: Request, exc: Exception) -> JSONRespons
     )
 
 
+async def handle_stale_data_error(request: Request, exc: Exception) -> JSONResponse:
+    """CIS Phase 2 Prompt 1's Optimistic Locking: SQLAlchemy's
+    ``version_id_col`` mechanism (see
+    cerebrum.infrastructure.database.models.mixins.OptimisticLockMixin)
+    raises this plain SQLAlchemy exception, not a
+    :class:`~cerebrum.shared.errors.base.PlatformException`, when an
+    ``UPDATE`` targets a row another transaction already changed —
+    translated here into the same standardized 409 envelope
+    :class:`~cerebrum.shared.errors.exceptions.ConflictException` would
+    produce, rather than falling through to
+    :func:`handle_unexpected_exception`'s generic 500.
+    """
+    assert isinstance(exc, StaleDataError)
+    _logger.warning("exception.optimistic_lock_conflict", message=str(exc))
+    return build_error_response(
+        request,
+        error_code="ConflictException",
+        message="The resource was modified by another request. Reload and retry.",
+        http_status=status.HTTP_409_CONFLICT,
+        retryable=True,
+    )
+
+
 def _unexpected_exception_message(exc: Exception, settings: Settings) -> str:
     """Never expose internal stack traces in a production-like
     environment — see CIS Phase 1 Prompt 3 Section 3's Global Exception
@@ -162,4 +186,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(PlatformException, handle_platform_exception)
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(StarletteHTTPException, handle_http_exception)
+    app.add_exception_handler(StaleDataError, handle_stale_data_error)
     app.add_exception_handler(Exception, handle_unexpected_exception)

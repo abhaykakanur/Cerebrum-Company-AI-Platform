@@ -30,6 +30,7 @@ from cerebrum.config.settings import Settings
 from cerebrum.core.logging import get_logger
 from cerebrum.core.observability import NoOpMetricsRegistry, NoOpTracer
 from cerebrum.core.state import ApplicationState
+from cerebrum.events.dispatcher import EventDispatcher
 from cerebrum.infrastructure.cache.manager import RedisClientManager
 from cerebrum.infrastructure.database.manager import PostgresClientManager
 from cerebrum.infrastructure.graph.manager import Neo4jClientManager
@@ -50,6 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings=settings,
         metrics=NoOpMetricsRegistry(),
         tracer=NoOpTracer(),
+        events=EventDispatcher(),
         database=PostgresClientManager(
             settings.postgres, settings.infrastructure, infra_logger
         ),

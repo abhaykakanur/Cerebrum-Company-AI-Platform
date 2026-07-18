@@ -27,9 +27,12 @@ from cerebrum.utils.clock import utcnow
 
 
 class AuditEventType(StrEnum):
-    """The seven event types CIS Phase 1 Prompt 5 names explicitly.
-    Every category (Authentication, Authorization) beyond these seven is
-    added alongside the feature work that produces it.
+    """The seven Authentication/Authorization event types CIS Phase 1
+    Prompt 5 names explicitly, plus the six Upload/Delete/Restore/
+    Download/Validation-failure/Storage-failure events CIS Phase 2
+    Prompt 2's Auditing requirement names for the Document domain. Every
+    category beyond these is added alongside the feature work that
+    produces it.
     """
 
     LOGIN = "login"
@@ -39,6 +42,13 @@ class AuditEventType(StrEnum):
     PERMISSION_DENIED = "permission_denied"
     API_KEY_USED = "api_key_used"
     SESSION_REVOKED = "session_revoked"
+
+    DOCUMENT_UPLOADED = "document_uploaded"
+    DOCUMENT_UPLOAD_VALIDATION_FAILED = "document_upload_validation_failed"
+    DOCUMENT_STORAGE_FAILURE = "document_storage_failure"
+    DOCUMENT_DELETED = "document_deleted"
+    DOCUMENT_RESTORED = "document_restored"
+    DOCUMENT_DOWNLOADED = "document_downloaded"
 
 
 class AuditEvent(Base, UUIDPrimaryKeyMixin):

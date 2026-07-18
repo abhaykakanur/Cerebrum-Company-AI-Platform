@@ -1,16 +1,17 @@
-"""File Foundation (CIS Phase 1 Prompt 6): reusable upload/download/
-streaming/validation interfaces a future file-handling feature (Document
-Ingestion, Connector attachments, ...) implements against. No document
-ingestion, storage-backend selection logic, or business validation rule
+"""File Foundation (CIS Phase 1 Prompt 6, implemented by CIS Phase 2
+Prompt 2's Document Upload & Ingestion Pipeline): reusable upload/
+download/streaming/validation interfaces a file-handling feature
+implements against. No document ingestion (parsing, OCR, chunking)
 lives here — see this milestone's Non-Objectives.
 
 :class:`FileUploader`/:class:`FileDownloader` are Protocol ports, in the
-same style as cerebrum.core.observability's ``MetricsRegistry``/``Tracer``
-— a concrete adapter (backed by
-:class:`~cerebrum.infrastructure.storage.manager.MinIOClientManager`'s
-client, per CIS Phase 1 Prompt 4) is Deferred to the first feature that
-actually uploads or downloads a file; nothing at this milestone
-implements these Protocols yet.
+same style as cerebrum.core.observability's ``MetricsRegistry``/``Tracer``.
+:class:`~cerebrum.infrastructure.storage.minio_files.MinIOFileUploader`/
+``MinIOFileDownloader`` are the first concrete adapters (CIS Phase 2
+Prompt 2) — ``delete``/presigned-URL methods were added to these
+Protocols alongside that implementation, since Phase 1 Prompt 6 only
+speculatively named "Upload, Download, Streaming, Validation" without
+committing to the full method set a real adapter needs.
 """
 
 from collections.abc import AsyncIterator
@@ -77,24 +78,54 @@ class UploadedFile:
 
 
 class FileUploader(Protocol):
-    """The Upload port a future MinIO-backed adapter implements."""
+    """The Upload port a MinIO-backed adapter implements.
+
+    ``content: bytes``, not an ``AsyncIterator[bytes]``: CIS Phase 2
+    Prompt 2's upload pipeline
+    (cerebrum.application.knowledge.upload_service.UploadService) must
+    compute the SHA256 checksum of the *complete* content and enforce
+    the configured size ceiling before committing to a store, so it
+    already holds the whole upload in memory (bounded by that same size
+    ceiling, checked progressively while reading — see that service's
+    docstring) by the time this is called. A true end-to-end chunked
+    stream (client -> this port -> MinIO, hashing incrementally) is a
+    documented future optimization, not a change to this contract's
+    callers.
+    """
 
     async def upload(
         self,
         *,
         object_key: str,
-        content: AsyncIterator[bytes],
+        content: bytes,
         content_type: str,
         size_bytes: int,
     ) -> UploadedFile: ...
 
+    async def delete(self, object_key: str) -> None: ...
+
+    async def presigned_upload_url(
+        self, object_key: str, *, expires_in_seconds: int = 3600
+    ) -> str: ...
+
 
 class FileDownloader(Protocol):
-    """The Download/Streaming port a future MinIO-backed adapter
-    implements. Returns an async byte-chunk iterator rather than the full
-    file in memory, so a large file can be streamed straight into an
-    HTTP response (e.g. FastAPI's ``StreamingResponse``) without
-    buffering it server-side.
+    """The Download/Streaming port a MinIO-backed adapter implements.
+    Returns an async byte-chunk iterator so a route can hand it straight
+    to FastAPI's ``StreamingResponse``.
+
+    ``download`` is declared *without* ``async`` deliberately, per
+    mypy's own guidance for typing an async-generator method on a
+    Protocol: calling it must synchronously return the
+    ``AsyncIterator[bytes]`` itself (for ``async for chunk in
+    downloader.download(...)``), not a coroutine that must first be
+    awaited to *obtain* the iterator — an implementation satisfies this
+    by being an async generator function (``async def ... yield ...``),
+    exactly as ``async def`` + ``yield`` already behaves in Python.
     """
 
-    async def download(self, *, object_key: str) -> AsyncIterator[bytes]: ...
+    def download(self, *, object_key: str) -> AsyncIterator[bytes]: ...
+
+    async def presigned_download_url(
+        self, object_key: str, *, expires_in_seconds: int = 3600
+    ) -> str: ...

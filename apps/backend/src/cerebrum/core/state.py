@@ -15,6 +15,7 @@ from typing import Any
 
 from cerebrum.config.settings import Settings
 from cerebrum.core.observability import MetricsRegistry, Tracer
+from cerebrum.events.dispatcher import EventDispatcher
 from cerebrum.infrastructure.cache.manager import RedisClientManager
 from cerebrum.infrastructure.database.manager import PostgresClientManager
 from cerebrum.infrastructure.graph.manager import Neo4jClientManager
@@ -35,6 +36,7 @@ class ApplicationState:
     settings: Settings
     metrics: MetricsRegistry
     tracer: Tracer
+    events: EventDispatcher
     database: PostgresClientManager
     redis: RedisClientManager
     neo4j: Neo4jClientManager

@@ -199,6 +199,13 @@ AuthorizationServiceDep = Annotated[
 ]
 
 
+def get_audit_service(session: DbSessionDep) -> AuditService:
+    return AuditService(AuditEventRepository(session))
+
+
+AuditServiceDep = Annotated[AuditService, Depends(get_audit_service)]
+
+
 def require_permission(permission_code: str) -> Callable[..., Awaitable[None]]:
     """Route protection: ``Depends(require_permission("workspace:read"))``.
     A dependency *factory*, not a dependency itself — each call returns a

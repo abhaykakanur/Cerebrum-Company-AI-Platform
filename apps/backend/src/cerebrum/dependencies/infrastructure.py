@@ -24,6 +24,7 @@ from redis.asyncio import Redis
 
 from cerebrum.core.observability import MetricsRegistry, Tracer
 from cerebrum.dependencies.state import ApplicationStateDep
+from cerebrum.events.dispatcher import EventDispatcher
 
 
 def get_redis(state: ApplicationStateDep) -> Redis:
@@ -54,6 +55,10 @@ def get_tracer(state: ApplicationStateDep) -> Tracer:
     return state.tracer
 
 
+def get_event_dispatcher(state: ApplicationStateDep) -> EventDispatcher:
+    return state.events
+
+
 RedisDep = Annotated[Redis, Depends(get_redis)]
 Neo4jDep = Annotated[AsyncDriver, Depends(get_neo4j)]
 QdrantDep = Annotated[AsyncQdrantClient, Depends(get_qdrant)]
@@ -61,3 +66,4 @@ MinIODep = Annotated[Minio, Depends(get_minio)]
 OpenSearchDep = Annotated[AsyncOpenSearch, Depends(get_opensearch)]
 MetricsRegistryDep = Annotated[MetricsRegistry, Depends(get_metrics_registry)]
 TracerDep = Annotated[Tracer, Depends(get_tracer)]
+EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]

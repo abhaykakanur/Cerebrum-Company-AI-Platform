@@ -11,6 +11,7 @@ service adapts into that response — infrastructure/repositories/ must
 not import from api/, per docs/architecture/dependency-rules.md.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -62,6 +63,25 @@ class Page[EntityT]:
     @property
     def has_previous(self) -> bool:
         return self.pagination.page > 1
+
+
+def map_page[EntityT, ResultT](
+    page: Page[EntityT], mapper: Callable[[EntityT], ResultT]
+) -> Page[ResultT]:
+    """Adapts a repository-layer ``Page[EntityT]`` into a
+    ``Page[ResultT]`` (typically an API response schema) by mapping each
+    item — CIS Phase 2 Prompt 1's first callers (``cerebrum.api.v1.*``
+    listing endpoints) each need exactly this, and ``dataclasses.replace``
+    cannot change a generic dataclass's type parameter in a way mypy can
+    verify (it type-checks ``items=`` against the *original* ``EntityT``),
+    so this is the type-safe alternative every such endpoint should use
+    instead of constructing a new ``Page`` by hand.
+    """
+    return Page(
+        items=[mapper(item) for item in page.items],
+        total_items=page.total_items,
+        pagination=page.pagination,
+    )
 
 
 class SortDirection(StrEnum):
