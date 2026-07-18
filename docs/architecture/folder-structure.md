@@ -1,35 +1,37 @@
 # Folder Structure
 
-Complete, annotated repository tree as of the Enterprise Data &
-Infrastructure Foundation milestone (Phase 1, Prompt 4). Directories
-that are still empty of code (structural placeholders for future
-*business* work — no domain has been implemented yet) are marked
-accordingly — each such directory contains a `README.md` explaining what
-belongs there and why it's empty now.
+Complete, annotated repository tree as of the Production Readiness &
+Platform Hardening milestone (Phase 1, Prompt 7) — Phase 1's final
+milestone. Directories that
+are still empty of code (structural placeholders for future *business*
+work — no domain has been implemented yet) are marked accordingly — each
+such directory contains a `README.md` explaining what belongs there and
+why it's empty now.
 
 ```
 cerebrum/
 ├── apps/
 │   ├── backend/
-│   │   ├── alembic/                # Migration environment (empty versions/ — no ORM model yet)
+│   │   ├── alembic/                # Migration environment — one hand-written revision (identity/security tables)
 │   │   ├── alembic.ini
 │   │   ├── src/cerebrum/
-│   │   │   ├── api/              # FastAPI routers: health, /api/v1, response envelope schemas
-│   │   │   ├── application/       # Use cases, command/query handlers (empty — no business use case yet)
+│   │   │   ├── api/              # FastAPI routers: health, /api/versions, /api/v1, /api/v1/auth, response envelope + builder, versioning, OpenAPI error docs
+│   │   │   ├── application/       # application/auth/ (login, RBAC, API keys, audit) — no other use case yet
 │   │   │   ├── config/             # Typed, validated, environment-driven settings (populated)
-│   │   │   ├── core/                 # Application Factory, lifecycle, logging, exception handlers (populated)
-│   │   │   ├── dependencies/          # FastAPI DI providers: settings, logger, state, infra clients
+│   │   │   ├── core/                 # Application Factory, lifecycle, logging, exception handlers, OpenAPI/metadata (populated)
+│   │   │   ├── dependencies/          # FastAPI DI providers: settings, logger, state, infra clients, auth, pagination, request context, rate limiting
 │   │   │   ├── domain/                 # Entities, aggregates, domain services (empty — no domain yet)
 │   │   │   ├── events/                  # DomainEvent base + in-process EventDispatcher (interfaces only)
-│   │   │   ├── infrastructure/            # DB/cache/graph/vector/storage/search client managers (populated)
-│   │   │   ├── middleware/                 # Request ID/Correlation ID/context/timing/logging pipeline (populated)
-│   │   │   ├── repositories/                # Abstract CRUD/pagination/sort/filter/soft-delete contracts (populated — no concrete repository yet)
+│   │   │   ├── infrastructure/            # DB/cache/graph/vector/storage/search clients + database/models/ + security/ + storage/files.py (populated)
+│   │   │   ├── middleware/                 # Request ID/Correlation ID/context/timing/logging/authentication/size-limit/metrics pipeline (populated)
+│   │   │   ├── repositories/                # Abstract contracts + repositories/postgres/ (identity/security models)
 │   │   │   ├── services/                     # Cross-domain composed services (empty — no service yet)
 │   │   │   ├── shared/                         # Error taxonomy (shared/errors/) + future cross-cutting utilities
 │   │   │   ├── utils/                            # Clock, UUID generation (populated)
 │   │   │   ├── workers/                            # Worker/Job/Queue/Scheduler interfaces only — no implementation
 │   │   │   └── main.py                               # ASGI entrypoint — delegates to core.factory only
-│   │   ├── tests/{unit,integration,e2e,performance,ai_evaluation}/  # unit/ has platform + infrastructure tests; rest empty
+│   │   ├── tests/{unit,integration,e2e,performance,ai_evaluation}/  # unit/ has 246 platform + infra + identity/security tests; rest empty
+│   │   ├── Dockerfile                # Production container image — see docs/deployment/production-deployment.md
 │   │   ├── pyproject.toml
 │   │   └── README.md
 │   └── frontend/
@@ -63,11 +65,13 @@ cerebrum/
 │   ├── architecture/           # This directory
 │   │   ├── specification/        # The complete CES (108 documents)
 │   │   ├── infrastructure/         # Database/connection-lifecycle/transaction/repository/migration guides
-│   │   └── adrs/                   # Future implementation-phase ADRs (ADR-021+)
-│   ├── development/                  # This document's siblings
-│   ├── deployment/                     # Infrastructure/deployment guides
-│   ├── api/                              # Reserved — populated once API endpoints exist
-│   └── testing/                            # Reserved — populated as test suites grow
+│   │   ├── security/                 # Authentication/RBAC/multi-tenancy/API key/security-architecture guides
+│   │   ├── api/                        # API architecture/versioning/dependency/response/validation guides
+│   │   └── adrs/                       # Future implementation-phase ADRs (ADR-021+)
+│   ├── development/                  # Getting started, onboarding, dev workflow, coding standards
+│   ├── deployment/                     # Infrastructure + production deployment guides, troubleshooting
+│   ├── api/                              # Reserved — populated once business API endpoints exist (distinct from docs/architecture/api/, the platform's own architecture docs)
+│   └── testing/                            # Testing Guide (populated — see docs/testing/README.md)
 │
 ├── scripts/            # Developer commands (setup, start, test, validate, ...)
 ├── config/{development,testing,staging,production}/   # Per-environment config (empty — reserved)
@@ -76,27 +80,37 @@ cerebrum/
 ├── examples/                 # Reserved for future usage examples
 ├── assets/                     # Reserved for shared static assets
 │
-├── .github/                       # Issue/PR templates, CODEOWNERS, workflow placeholders
+├── .github/
+│   └── workflows/ci.yml               # Real CI pipeline (format/lint/typecheck/test/security/docker-build)
 ├── .vscode/                          # Shared editor configuration
 ├── .devcontainer/                       # Codespaces / Dev Containers config
 │
 ├── README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, LICENSE
 ├── package.json, pnpm-workspace.yaml     # TypeScript workspace root
 ├── pyproject.toml                          # Python (uv) workspace root
-├── .env.example, .gitignore, .gitattributes, .editorconfig, .pre-commit-config.yaml
+├── .env.example, .gitignore, .gitattributes, .editorconfig, .pre-commit-config.yaml, .dockerignore
 ```
 
 ## Why So Many Empty, README-Only Directories
 
-`domain/`, `application/`, and `services/` remain documentation-only:
-they hold business logic, and no business domain has been implemented
-yet (see CIS Phase 1 Prompt 4's Non-Objectives). `api/`, `config/`,
+`domain/` and `services/` remain documentation-only: they hold business
+logic, and no business domain has been implemented yet (see CIS Phase 1
+Prompt 5's Non-Objectives). `application/` now has one subpackage
+(`application/auth/`) — platform authentication/authorization services,
+not a business use case; it remains otherwise empty. `api/`, `config/`,
 `core/`, `dependencies/`, `events/`, `middleware/`, `shared/`, `utils/`,
-`infrastructure/`, and `repositories/` are now populated — they hold the
-reusable platform every future domain builds on, per that same prompt's
-Primary Objectives. `infrastructure/` and `repositories/` specifically
-hold *connection management and contracts*, not business queries or
-concrete repositories — see `docs/architecture/infrastructure/README.md`.
+`infrastructure/`, and `repositories/` are populated — they hold the
+reusable platform every future domain builds on. `infrastructure/` and
+`repositories/` hold *connection management, contracts, and the
+identity/security models* specifically — see
+`docs/architecture/infrastructure/README.md` and
+`docs/architecture/security/README.md` — not business queries or a
+business domain's own repositories. As of Phase 1, Prompt 6, `api/`,
+`dependencies/`, and `middleware/` also hold the reusable API platform
+layer (pagination/filtering/sorting, response standardization, API
+versioning, OpenAPI documentation, general-purpose rate limiting, API
+metrics) — see `docs/architecture/api/README.md` — still no business
+endpoint or query.
 
 Every one of these directories exists because the CES's architecture
 already specifies it belongs there (see

@@ -8,10 +8,12 @@ license = { text = "UNLICENSED" }
 
 # ==============================================================================
 # Framework dependencies (Phase 1, Prompt 3 — Enterprise Backend Platform
-# Foundation) plus infrastructure client libraries (Phase 1, Prompt 4 —
-# Enterprise Data & Infrastructure Foundation). No ORM models, business
-# repositories, or business logic exist yet per that milestone's explicit
-# scope — see apps/backend/README.md and docs/architecture/infrastructure/.
+# Foundation), infrastructure client libraries (Phase 1, Prompt 4 —
+# Enterprise Data & Infrastructure Foundation), and identity/security
+# libraries (Phase 1, Prompt 5 — Identity, Security & Multi-Tenancy
+# Foundation). No business repositories or business logic beyond the
+# identity/security platform itself exist yet — see apps/backend/README.md,
+# docs/architecture/infrastructure/, and docs/architecture/security/.
 # ==============================================================================
 dependencies = [
     "fastapi>=0.115.0",
@@ -29,6 +31,11 @@ dependencies = [
     "qdrant-client>=1.11.3",
     "minio>=7.2.9",
     "opensearch-py[async]>=2.7.1",
+    # --- Identity & Security (Phase 1, Prompt 5) -----------------------------
+    "pyjwt>=2.9.0",
+    "argon2-cffi>=23.1.0",
+    "python-multipart>=0.0.12",
+    "email-validator>=2.2.0",
 ]
 
 [dependency-groups]

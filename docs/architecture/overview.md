@@ -39,12 +39,31 @@ into it.
 
 ## Current Implementation Status
 
-Repository Foundation, Infrastructure Foundation (Docker Compose),
-Enterprise Backend Platform Foundation, and Enterprise Data &
-Infrastructure Foundation only — see the root `README.md`'s status note.
-The backend now runs (typed configuration, DI, middleware, logging,
-exception handling, health endpoints) and connects to all six datastores
-at startup with retry and graceful degradation — see
-`apps/backend/README.md` and `docs/architecture/infrastructure/` — but no
-business domain has been implemented yet. `docs/architecture/module-ownership.md`
+**Phase 1 (Foundation) is complete** as of CIS Phase 1 Prompt 7
+(Production Readiness & Platform Hardening) — see the root `README.md`'s
+status note. Seven milestones: Repository Foundation, Infrastructure
+Foundation (Docker Compose), Enterprise Backend Platform Foundation,
+Enterprise Data & Infrastructure Foundation, Identity, Security &
+Multi-Tenancy Foundation, Enterprise API Platform & Developer Experience,
+and Production Readiness & Platform Hardening. The backend now runs
+(typed configuration, DI, middleware, logging, exception handling,
+health endpoints with version/build information), connects to all six
+datastores at startup with retry and graceful degradation, provides JWT
+authentication, RBAC, API keys, and multi-tenant request context, a
+reusable API platform layer (pagination/filtering/sorting, response
+standardization, API versioning, OpenAPI documentation, general-purpose
+rate limiting, API metrics and tracing hooks), and is now
+production-hardened: a validated architecture (no circular imports, no
+layering violations, no duplicate abstractions — verified
+programmatically), a production Docker image
+(`apps/backend/Dockerfile`), a real CI pipeline
+(`.github/workflows/ci.yml`: formatting, linting, `mypy --strict`, unit
+tests with coverage, secret/dependency scanning, Docker build
+verification), and enforced production configuration safety (the
+process refuses to start with an unrotated default credential or a
+wildcard trusted-host/CORS policy in `staging`/`production`) — see
+`apps/backend/README.md`, `docs/architecture/infrastructure/`,
+`docs/architecture/security/`, `docs/architecture/api/`, and
+`docs/deployment/production-deployment.md`. Still no business domain has
+been implemented — that begins with Phase 2. `docs/architecture/module-ownership.md`
 will be updated as each domain is added.

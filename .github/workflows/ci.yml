@@ -1,41 +1,164 @@
 # ==============================================================================
-# Cerebrum CI Pipeline — PLACEHOLDER
+# Cerebrum CI Pipeline
 #
-# This is a placeholder, not a real CI pipeline. It is deliberately
-# workflow_dispatch-only (manually triggered) so it never runs
-# automatically on push/PR — no CI implementation exists yet, per this
-# milestone's explicit scope.
-#
-# The full pipeline, once implemented, follows the thirteen stages in
+# Implements the backend-relevant subset of the thirteen-stage pipeline in
 # docs/architecture/specification/97_CICD_Architecture.md:
-#   1. Static Analysis        8. Security Scanning
-#   2. Formatting              9. Build Verification
-#   3. Linting                 10. Artifact Generation
-#   4. Type Checking            11. Deployment Approval
-#   5. Dependency Validation     12. Deployment
-#   6. Unit Tests                  13. Post-Deployment Validation
-#   7. Integration Tests
+#   1. Static Analysis   -> ruff
+#   2. Formatting        -> black --check, isort --check-only
+#   3. Linting           -> ruff check
+#   4. Type Checking     -> mypy --strict
+#   5. Dependency Validation -> uv sync (resolution failure = job failure)
+#   6. Unit Tests        -> pytest -m unit, with coverage
+#   7. Integration Tests -> Deferred (would require live datastores in the
+#      runner; per 97_CICD_Architecture.md, "not included in every pipeline
+#      run by default" — a scheduled/nightly job is a documented future
+#      recommendation, not implemented here).
+#   8. Security Scanning -> gitleaks (secret detection) + pip-audit
+#      (dependency vulnerabilities, advisory — see the `security` job).
+#   9. Build Verification / 10. Artifact Generation -> `docker build` of
+#      apps/backend/Dockerfile (the `docker-build` job).
+#  11–13. Deployment Approval/Deployment/Post-Deployment Validation ->
+#      Deferred to Architecture — no deployment target is configured yet
+#      (see docs/architecture/specification/96_Deployment_Strategy.md).
 #
-# This placeholder implements a "hello world" verification job only — it
-# proves the Actions pipeline mechanism is wired up, nothing more.
+# Every job below mirrors the exact command scripts/lint.sh, scripts/format.sh,
+# scripts/typecheck.sh, and scripts/test.sh already run locally for the
+# backend — see docs/testing/README.md and docs/development/development-guide.md.
+# Frontend CI (pnpm lint/typecheck/test) is intentionally NOT included here:
+# apps/frontend/ is still placeholder scaffolding (see
+# docs/architecture/folder-structure.md) with nothing meaningful to check
+# yet — wiring it in is a documented future recommendation for when real
+# frontend implementation begins, not an oversight.
 # ==============================================================================
 
-name: CI (placeholder)
+name: CI
 
 on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
   workflow_dispatch: {}
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.5.x"
+  PYTHON_VERSION: "3.12"
+
 jobs:
-  placeholder:
-    name: Placeholder verification
+  # --- Stages 1-6: static analysis, formatting, linting, type checking, ------
+  # --- dependency validation, unit tests ---------------------------------------
+  quality:
+    name: Backend Quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Confirm repository structure
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Install Python ${{ env.PYTHON_VERSION }}
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      # Stage 5: Dependency Validation — a resolution failure here (an
+      # unresolvable or yanked dependency) fails the job before any slower
+      # stage runs, per the pipeline's "fail fastest" ordering.
+      - name: Install dependencies (uv sync)
+        run: uv sync --project apps/backend --all-extras --dev
+
+      # Stage 2: Formatting — check-only; scripts/format.sh's local
+      # counterpart mutates in place, which CI must never do.
+      - name: Formatting (black --check)
+        run: uv run --project apps/backend black --check apps/backend
+
+      - name: Import order (isort --check-only)
+        run: uv run --project apps/backend isort --check-only apps/backend
+
+      # Stages 1 & 3: Static Analysis + Linting — one tool covers both in
+      # this stack (ruff's rule set includes flake8-bugbear/simplify for
+      # complexity and common-bug-pattern detection alongside style) — see
+      # docs/architecture/specification/99_Coding_Standards.md.
+      - name: Lint (ruff)
+        run: uv run --project apps/backend ruff check apps/backend
+
+      # Stage 4: Type Checking — mypy strict mode is enabled at the
+      # workspace root's [tool.mypy] (strict = true), so this is already
+      # "mypy --strict" in effect.
+      - name: Type check (mypy --strict)
+        run: uv run --project apps/backend mypy apps/backend/src
+
+      # Stage 6: Unit Tests, with coverage reporting.
+      - name: Unit tests (pytest, with coverage)
         run: |
-          echo "This is a placeholder CI workflow."
-          echo "See docs/architecture/specification/97_CICD_Architecture.md for the pipeline this will become."
-          test -f pyproject.toml
-          test -f package.json
-          test -f infrastructure/docker/docker-compose.yml
-          echo "Repository foundation structure confirmed present."
+          uv run --project apps/backend pytest apps/backend/tests -m unit \
+            --cov=cerebrum --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage.xml
+          retention-days: 14
+
+  # --- Stage 8: Security Scanning ----------------------------------------------
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # gitleaks scans full history, not just the diff.
+
+      - name: Secret detection (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      # Advisory only (continue-on-error): a new CVE in a transitive
+      # dependency can appear between releases with no code change on our
+      # side — treating that as a hard merge-block would make an
+      # unrelated PR fail for a reason its author cannot fix. Findings are
+      # still surfaced in the job log for a human to triage, per
+      # docs/architecture/specification/97_CICD_Architecture.md's
+      # "no stage is advisory-only in a way that allows a failing check to
+      # be silently overridden" — this is a logged exception, not a
+      # silent one.
+      - name: Dependency vulnerability scan (pip-audit)
+        working-directory: apps/backend
+        run: uvx pip-audit --progress-spinner=off
+        continue-on-error: true
+
+  # --- Stages 9-10: Build Verification / Artifact Generation ------------------
+  docker-build:
+    name: Docker Build Verification
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (not pushed)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: false
+          tags: cerebrum-backend:ci
+          build-args: |
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ github.event.repository.pushed_at || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -1,0 +1,52 @@
+# ==============================================================================
+# Cerebrum — Docker build-context exclusions
+#
+# Keeps the build context sent to the Docker daemon small and free of
+# secrets/local state. apps/backend/Dockerfile only ever COPYs specific
+# paths (never `COPY . .`), so this file is a build-speed/hygiene
+# safeguard, not the sole mechanism preventing e.g. a local `.env` from
+# reaching an image layer.
+# ==============================================================================
+
+# Version control / editor / OS
+.git/
+.github/
+.vscode/
+.devcontainer/
+.idea/
+.DS_Store
+
+# Environment / secrets — never baked into an image
+.env
+.env.*
+!.env.example
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+**/*.egg-info/
+**/htmlcov/
+**/.coverage
+
+# Node / frontend workspace — irrelevant to the backend image
+apps/frontend/
+packages/
+node_modules/
+**/node_modules/
+
+# Docs, tests, and non-build-context repo scaffolding
+docs/
+apps/backend/tests/
+scripts/
+examples/
+assets/
+tools/
+infrastructure/docker/
+
+# Build output
+dist/
+build/

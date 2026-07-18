@@ -30,6 +30,7 @@ def configure_openapi(app: FastAPI, settings: Settings) -> None:
             version=app.version,
             description=app.description,
             routes=app.routes,
+            tags=app.openapi_tags,
         )
         schema["info"]["x-environment"] = settings.application.environment.value
         app.openapi_schema = schema

@@ -11,7 +11,7 @@ Variables architecture.
 
 from functools import lru_cache
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from cerebrum.config.api import APISettings
@@ -28,6 +28,20 @@ from cerebrum.config.redis import RedisSettings
 from cerebrum.config.security import SecuritySettings
 from cerebrum.config.worker import WorkerSettings
 from cerebrum.shared.errors.exceptions import ConfigurationException
+
+# Every datastore credential and the JWT signing secret share this
+# prefix in their local-development default (see config/database.py,
+# config/redis.py, config/neo4j.py, config/minio.py, config/security.py)
+# — a single, greppable marker of "never actually used to protect
+# anything," per docs/architecture/specification/37_Configuration_Strategy.md's
+# secret-handling guidance. CIS Phase 1 Prompt 7's Configuration Hardening/
+# Security Review: a production-like environment booting with even one of
+# these unrotated is a silent, critical vulnerability (e.g. an unrotated
+# JWT_SIGNING_SECRET is a value published in this very repository,
+# letting anyone forge a valid access token) — the pre-existing
+# trusted_hosts/cors_allowed_origins checks below caught the transport-
+# security case but not this one.
+_DEFAULT_SECRET_PLACEHOLDER = "changeme-local-only"
 
 
 class Settings(BaseSettings):
@@ -79,7 +93,36 @@ class Settings(BaseSettings):
                     f"'{self.application.environment.value}' environment.",
                     context={"environment": self.application.environment.value},
                 )
+            self._reject_default_secrets()
         return self
+
+    def _reject_default_secrets(self) -> None:
+        """No local-development placeholder credential may reach a
+        production-like environment unrotated — see this module's
+        ``_DEFAULT_SECRET_PLACEHOLDER`` docstring.
+        """
+        secrets: tuple[tuple[str, str | SecretStr], ...] = (
+            ("POSTGRES_PASSWORD", self.postgres.password),
+            ("REDIS_PASSWORD", self.redis.password),
+            ("NEO4J_PASSWORD", self.neo4j.password),
+            ("MINIO_ACCESS_KEY", self.minio.access_key),
+            ("MINIO_SECRET_KEY", self.minio.secret_key),
+            ("JWT_SIGNING_SECRET", self.security.jwt_secret_key),
+        )
+        for env_var, value in secrets:
+            raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+            if raw.startswith(_DEFAULT_SECRET_PLACEHOLDER):
+                raise ConfigurationException(
+                    message=f"{env_var} is still set to its local-development "
+                    f"placeholder value in a "
+                    f"'{self.application.environment.value}' environment. It "
+                    "must be rotated to a real secret before this process may "
+                    "start.",
+                    context={
+                        "environment": self.application.environment.value,
+                        "variable": env_var,
+                    },
+                )
 
 
 @lru_cache(maxsize=1)

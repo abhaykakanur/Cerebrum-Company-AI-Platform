@@ -54,26 +54,39 @@ scripts/validate.sh
 ```
 
 With the backend running, `curl http://localhost:8000/health` and
-`http://localhost:8000/api/v1/docs` should both respond.
+`http://localhost:8000/api/v1/docs` should both respond. Try logging in
+via `/api/v1/docs`'s interactive "Authorize" flow once you've seeded a
+user (see `apps/backend/tests/unit/_auth_factories.py` for the pattern —
+no registration endpoint exists yet, see `apps/backend/README.md`'s
+Limitations).
 
 ## What You Should See
 
-At this point in the project (Enterprise Backend Platform Foundation),
-there is no *business* functionality yet — no login, no dashboard, no AI
-chat. What you should see:
+Phase 1 (Foundation) is complete — there is no *business* functionality
+yet (no document upload, no dashboard, no AI chat), but the full
+platform foundation is real and running. What you should see:
 
 - The frontend serves a placeholder page confirming the build pipeline
   works.
-- The backend starts, serves `/health`, `/live`, `/ready`, and
-  `/api/v1/docs`, and every backend platform unit test passes.
+- The backend starts, serves `/health` (with version and build
+  information), `/live`, `/ready`, `/api/versions`, and `/api/v1/docs`,
+  and every backend unit test passes (246 as of CIS Phase 1 Prompt 7 —
+  see `docs/testing/README.md`).
 - All six infrastructure services report healthy via `scripts/doctor.sh`
-  — though the backend does not yet connect to any of them (`/health`
-  reports each as `not_configured`; see `apps/backend/README.md`).
-- `scripts/validate.sh` passes with zero lint warnings.
+  **and** the backend actually connects to all six at startup — `/health`
+  reports each as `healthy` (or `unavailable` with a real error detail if
+  something's actually down, never `not_configured`).
+- JWT login/refresh/logout work end-to-end against a seeded user — see
+  `docs/architecture/security/authentication-guide.md`.
+- `scripts/validate.sh` passes with zero lint/type warnings.
+- `docker build -f apps/backend/Dockerfile -t cerebrum-backend .` (from
+  the repository root) succeeds — see
+  `docs/deployment/production-deployment.md`.
 
 If all of that is true, your environment is correctly set up. See
 `docs/architecture/specification/110_Implementation_Roadmap.md` for what
-gets built next.
+gets built next (Phase 2 onward), and
+`docs/development/onboarding.md` for a fuller orientation.
 
 ## Next Steps
 

@@ -35,6 +35,15 @@ class HealthResponse(BaseModel):
 
     status: Literal["healthy", "degraded", "unhealthy"]
     version: str
+    build_commit: str = Field(
+        description="Git commit SHA this running process was built from — see "
+        "cerebrum.config.application.ApplicationSettings.build_commit. "
+        "'unknown' for a local development run."
+    )
+    build_time: str = Field(
+        description="ISO-8601 UTC build timestamp, or 'local' for a local "
+        "development run."
+    )
     environment: str
     uptime_seconds: float
     timestamp: datetime = Field(default_factory=utcnow)

@@ -55,9 +55,17 @@ def _redact_sensitive_fields(
     """A structlog processor: replaces any field whose key matches the
     sensitive-field denylist (case-insensitive substring match) with a
     fixed redaction marker, regardless of value.
+
+    Substring, not exact, match: a call site binding ``hashed_password``,
+    ``raw_api_key``, or ``client_secret`` — a plausible field name none of
+    this codebase's current call sites happen to use, but not something
+    this processor should rely on staying true — is caught by the same
+    ``password``/``api_key``/``secret`` entries as the exact field name,
+    with no denylist maintenance required for every variant.
     """
     for key in list(event_dict.keys()):
-        if key.lower() in _SENSITIVE_FIELD_NAMES:
+        lowered_key = key.lower()
+        if any(sensitive in lowered_key for sensitive in _SENSITIVE_FIELD_NAMES):
             event_dict[key] = _REDACTED_VALUE
     return event_dict
 

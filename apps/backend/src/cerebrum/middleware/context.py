@@ -1,21 +1,43 @@
 """The typed :class:`RequestContext` every HTTP request owns exactly one
 of, and the contextvar that makes it available anywhere in the call
-stack — logging, exception handlers, future application services —
-without threading it through every function signature.
+stack — logging, exception handlers, application services — without
+threading it through every function signature.
 
-See CIS Phase 1 Prompt 3 Section 3's Request Context requirement. Tenant,
-Workspace, and Authenticated User are typed as ``None``-defaulted
-placeholders: no Authentication or Multi-Tenancy domain exists yet (see
-this milestone's Non-Objectives), but the field names are fixed now so
-those future domains populate an existing contract rather than one
-introduced alongside them.
+See CIS Phase 1 Prompt 3 Section 3's Request Context requirement. As of
+CIS Phase 1 Prompt 5, ``tenant_id``/``authenticated_user_id`` are
+populated from :class:`AuthIdentity` (resolved by
+cerebrum.middleware.authentication.AuthenticationMiddleware, which runs
+before cerebrum.middleware.request_context.RequestContextMiddleware —
+see cerebrum.middleware.registry) for an authenticated request, and
+remain ``None`` for an anonymous one. ``workspace_id`` is populated from
+an optional ``X-Workspace-ID`` header, raw and unvalidated — see
+docs/architecture/security/multi-tenancy-guide.md for why validating
+that the caller actually belongs to that workspace is a route-dependency
+concern (cerebrum.dependencies.auth), not this middleware's.
 """
 
+import uuid
 from contextvars import ContextVar, Token
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from starlette.requests import Request
+
 from cerebrum.utils.clock import utcnow
+
+
+@dataclass(frozen=True, slots=True)
+class AuthIdentity:
+    """The identity resolved from a valid access token or API key —
+    everything :class:`RequestContext` and
+    cerebrum.dependencies.auth.get_current_user need, without either
+    re-decoding the token or loading the full
+    :class:`~cerebrum.infrastructure.database.models.user.User` row
+    just to know who's asking.
+    """
+
+    user_id: uuid.UUID
+    organization_id: uuid.UUID
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,3 +102,24 @@ def reset_request_context(token: Token[RequestContext | None]) -> None:
     :func:`bind_request_context`.
     """
     _request_context_var.reset(token)
+
+
+def get_client_ip(request: Request) -> str | None:
+    """The requesting client's IP address — the one shared implementation
+    every "what IP made this request" call site (login rate limiting,
+    general-purpose rate limiting, audit logging on login/refresh/logout)
+    uses, rather than each reimplementing the same fallback (CIS Phase 1
+    Prompt 7's duplicate-abstraction cleanup — three near-identical
+    private copies previously existed in
+    cerebrum.api.v1.auth/cerebrum.dependencies.auth/cerebrum.dependencies.rate_limit).
+
+    Prefers the already-resolved :attr:`RequestContext.client_ip` (which
+    accounts for Trusted Proxy Support — see
+    cerebrum.middleware.request_context) when a context is bound, falling
+    back to the raw ASGI-reported peer address for a caller that might
+    run before ``RequestContextMiddleware`` has bound one.
+    """
+    context = get_current_request_context()
+    if context is not None and context.client_ip is not None:
+        return context.client_ip
+    return request.client.host if request.client else None

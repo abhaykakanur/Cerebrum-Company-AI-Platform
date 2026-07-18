@@ -82,3 +82,16 @@ def test_health_reports_degraded_when_some_components_are_healthy(
 def test_api_v1_root_is_reachable(client: TestClient) -> None:
     response = client.get("/api/v1/")
     assert response.status_code == 200
+
+
+def test_health_reports_version_and_build_information(client: TestClient) -> None:
+    """CIS Phase 1 Prompt 7's Health Platform improvement: Version and
+    Build Information — see
+    cerebrum.config.application.ApplicationSettings.build_commit/build_time.
+    A local development run (this test environment) reports the
+    documented defaults, since no CI/Docker build set BUILD_COMMIT/BUILD_TIME.
+    """
+    body = client.get("/health").json()
+    assert body["version"] == client.app.state.cerebrum.settings.application.version
+    assert body["build_commit"] == "unknown"
+    assert body["build_time"] == "local"

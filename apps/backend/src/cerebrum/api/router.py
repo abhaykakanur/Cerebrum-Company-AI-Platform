@@ -7,7 +7,9 @@ from fastapi import APIRouter
 
 from cerebrum.api.health import router as health_router
 from cerebrum.api.v1.router import router as v1_router
+from cerebrum.api.version_routes import router as version_router
 
 router = APIRouter()
 router.include_router(health_router)
+router.include_router(version_router)
 router.include_router(v1_router)

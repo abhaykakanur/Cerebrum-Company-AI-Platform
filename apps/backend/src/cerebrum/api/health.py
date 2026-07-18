@@ -90,6 +90,8 @@ async def health(state: ApplicationStateDep) -> HealthResponse:
     return HealthResponse(
         status=overall_status,
         version=state.settings.application.version,
+        build_commit=state.settings.application.build_commit,
+        build_time=state.settings.application.build_time,
         environment=state.settings.application.environment.value,
         uptime_seconds=state.uptime_seconds,
         timestamp=utcnow(),

@@ -29,7 +29,9 @@ Externalized Secrets Decision Rationale for why.
 |---|---|---|
 | Service connection | `POSTGRES_HOST`, `NEO4J_PORT`, `QDRANT_HOST` | Where to reach each infrastructure service. |
 | Service credentials | `POSTGRES_PASSWORD`, `MINIO_ACCESS_KEY` | Local-development-only values; never real credentials, never used beyond `localhost`. |
-| Application config | `ENVIRONMENT`, `LOG_LEVEL`, `BACKEND_PORT` | Not yet consumed by any running code at this milestone — reserved for the application phase. |
+| Application config | `ENVIRONMENT`, `LOG_LEVEL`, `BACKEND_PORT`, `BUILD_COMMIT`, `BUILD_TIME` | `ENVIRONMENT` gates production-safety validation (see below) and is read by `cerebrum.config.application.ApplicationSettings`; `BUILD_COMMIT`/`BUILD_TIME` are set by CI/Docker builds and surfaced on `GET /health`. |
+| Identity & Security | `JWT_SIGNING_SECRET`, `SECURITY_*` | JWT signing, password policy, rate limiting, session/API-key lifetime — see `docs/architecture/security/`. |
+| API platform | `SECURITY_API_RATE_LIMIT_REQUESTS`, `SECURITY_API_RATE_LIMIT_WINDOW_SECONDS` | General-purpose (non-login) rate limiting — see `docs/architecture/api/`. |
 | AI provider config | `LLM_PROVIDER`, `LLM_API_KEY` | Intentionally blank by default — no default provider is committed to by the specification (`docs/architecture/specification/40_Open_Questions.md`, Open Question 72). Leave blank unless you are specifically testing AI features once they exist. |
 | Feature flags | `FEATURE_FLAGS_OVERRIDE_FILE` | Points at a local override file, per `docs/architecture/specification/37_Configuration_Strategy.md`. |
 
@@ -43,6 +45,24 @@ categorically different from a staging/production secret, which is never
 handled via an environment file at all — see
 `docs/architecture/specification/37_Configuration_Strategy.md`'s
 Configuration Precedence model and the Security Domain's `GetSecret` port.
+
+## Environment Switching
+
+`ENVIRONMENT` (`development`/`testing`/`staging`/`production`) is the
+single switch every other environment-conditional decision branches on
+— see `cerebrum.config.environment.Environment`. `staging` and
+`production` are both "production-like" (`is_production_like`) and
+trigger the same stricter defaults: interactive API docs disabled,
+`Strict-Transport-Security` header sent, and — as of CIS Phase 1 Prompt
+7 — **the process refuses to start** if `SECURITY_TRUSTED_HOSTS`/
+`SECURITY_CORS_ALLOWED_ORIGINS` contain `*`, or if any of
+`POSTGRES_PASSWORD`/`REDIS_PASSWORD`/`NEO4J_PASSWORD`/`MINIO_ACCESS_KEY`/
+`MINIO_SECRET_KEY`/`JWT_SIGNING_SECRET` is still at its
+`changeme-local-only*` placeholder — see
+`cerebrum.config.settings.Settings._reject_default_secrets` and
+`docs/deployment/production-deployment.md`'s Required Configuration
+section for the full checklist before running this application anywhere
+other than local development.
 
 ## Adding a New Variable
 

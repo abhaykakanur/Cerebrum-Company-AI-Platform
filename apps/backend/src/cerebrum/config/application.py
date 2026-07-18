@@ -29,6 +29,18 @@ class ApplicationSettings(BaseSettings):
         description="Application version, surfaced in API metadata and health "
         "responses.",
     )
+    build_commit: str = Field(
+        default="unknown",
+        description="Git commit SHA this build was produced from — set by the "
+        "CI/Docker build (see apps/backend/Dockerfile's BUILD_COMMIT arg), "
+        "surfaced on GET /health for deployment verification. 'unknown' for a "
+        "local development run. BUILD_COMMIT.",
+    )
+    build_time: str = Field(
+        default="local",
+        description="ISO-8601 UTC build timestamp — set by the CI/Docker build. "
+        "'local' for a local development run. BUILD_TIME.",
+    )
 
     @property
     def debug(self) -> bool:

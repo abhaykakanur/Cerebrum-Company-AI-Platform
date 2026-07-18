@@ -22,19 +22,25 @@ implements; it does not redesign it. See
 for the full specification, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 what that means for how you work in this repository.
 
-**Current status:** Enterprise Data & Infrastructure Foundation. The
-backend is a running FastAPI application (typed configuration, DI,
-middleware pipeline, structured logging, centralized exception handling)
-that connects to all six datastores (PostgreSQL, Redis, Neo4j, Qdrant,
-MinIO, OpenSearch) at startup, reports real per-datastore health, and
-provides the Unit of Work and Repository Foundation patterns — with no
+**Current status: Phase 1 (Foundation) complete.** The backend is a
+production-hardened FastAPI application connected to all six datastores
+with JWT authentication (login/refresh/logout, with token rotation),
+Argon2 password hashing, an RBAC framework, API keys, session tracking,
+tenant-scoped request context, a reusable API platform layer
+(pagination/filtering/sorting, standardized response envelopes, an API
+Version Registry, OpenAPI documentation, general-purpose rate limiting,
+API metrics/tracing hooks), a production Docker image, a real CI
+pipeline, and enforced production configuration safety — with no
 business functionality yet. See
-[`apps/backend/README.md`](apps/backend/README.md) and
-[`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md).
+[`apps/backend/README.md`](apps/backend/README.md),
+[`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md),
+[`docs/architecture/security/`](docs/architecture/security/README.md),
+[`docs/architecture/api/`](docs/architecture/api/README.md), and
+[`docs/deployment/production-deployment.md`](docs/deployment/production-deployment.md).
 This is the engineering scaffold every future implementation phase
 builds on. See
 [`docs/architecture/specification/110_Implementation_Roadmap.md`](docs/architecture/specification/110_Implementation_Roadmap.md)
-for what comes next.
+for what comes next (Phase 2 onward).
 
 ## Repository Structure
 
@@ -105,6 +111,12 @@ for the architectural justification behind every choice.
 | Know what I can and can't import from where | [`docs/architecture/dependency-rules.md`](docs/architecture/dependency-rules.md) |
 | Understand how backend dependency injection works | [`docs/architecture/dependency-injection.md`](docs/architecture/dependency-injection.md) |
 | Understand the database/cache/graph/vector/storage/search clients | [`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md) |
+| Understand authentication, RBAC, multi-tenancy, API keys | [`docs/architecture/security/`](docs/architecture/security/README.md) |
+| Understand the API platform (pagination, responses, versioning, rate limiting) | [`docs/architecture/api/`](docs/architecture/api/README.md) |
+| Get oriented as a new contributor | [`docs/development/onboarding.md`](docs/development/onboarding.md) |
+| Write or run a test | [`docs/testing/README.md`](docs/testing/README.md) |
+| Deploy to production | [`docs/deployment/production-deployment.md`](docs/deployment/production-deployment.md) |
+| Fix a broken local/CI/Docker setup | [`docs/deployment/troubleshooting.md`](docs/deployment/troubleshooting.md) |
 | Run local infrastructure | [`docs/deployment/local-development.md`](docs/deployment/local-development.md) |
 | Contribute a change | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 | Report a security issue | [`SECURITY.md`](SECURITY.md) |

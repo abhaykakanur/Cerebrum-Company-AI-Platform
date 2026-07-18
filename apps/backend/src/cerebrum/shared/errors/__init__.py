@@ -15,9 +15,15 @@ from cerebrum.shared.errors.base import (
     PlatformException,
 )
 from cerebrum.shared.errors.exceptions import (
+    AuthenticationException,
+    AuthorizationException,
     ConfigurationException,
     ConnectionException,
+    ExpiredTokenException,
     InfrastructureException,
+    InvalidTokenException,
+    PermissionDeniedException,
+    RateLimitExceededException,
     TimeoutException,
     ValidationException,
 )
@@ -31,4 +37,10 @@ __all__ = [
     "InfrastructureException",
     "ConnectionException",
     "TimeoutException",
+    "AuthenticationException",
+    "InvalidTokenException",
+    "ExpiredTokenException",
+    "AuthorizationException",
+    "PermissionDeniedException",
+    "RateLimitExceededException",
 ]

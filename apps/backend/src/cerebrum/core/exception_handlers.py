@@ -18,22 +18,32 @@ from cerebrum.config.settings import Settings, get_settings
 from cerebrum.core.logging import get_api_logger
 from cerebrum.middleware.context import get_current_request_context
 from cerebrum.shared.errors.base import PlatformException
+from cerebrum.shared.errors.exceptions import RateLimitExceededException
 
 _logger = get_api_logger()
 
 
-def _identifiers() -> tuple[str, str | None]:
+def _identifiers(request: Request) -> tuple[str, str | None]:
     """Best-effort Request ID / Correlation ID lookup for a handler that
-    may run before RequestContextMiddleware has bound a context (e.g. a
-    malformed request that fails ASGI-level parsing).
+    may run before RequestContextMiddleware has bound a context — either
+    a malformed request that fails ASGI-level parsing, or (as of CIS
+    Phase 1 Prompt 5) an exception raised from within
+    cerebrum.middleware.authentication, which runs before Request
+    Context in the pipeline (see cerebrum.middleware.registry). Falls
+    back to ``request.state``, which RequestIDMiddleware/CorrelationIDMiddleware
+    populate earlier in the pipeline than RequestContextMiddleware binds
+    the contextvar, before finally falling back to ``"unknown"``.
     """
     context = get_current_request_context()
-    if context is None:
-        return "unknown", None
-    return context.request_id, context.correlation_id
+    if context is not None:
+        return context.request_id, context.correlation_id
+    return getattr(request.state, "request_id", "unknown"), getattr(
+        request.state, "correlation_id", None
+    )
 
 
-def _envelope(
+def build_error_response(
+    request: Request,
     *,
     error_code: str,
     message: str,
@@ -41,7 +51,17 @@ def _envelope(
     retryable: bool = False,
     details: list[ErrorDetail] | None = None,
 ) -> JSONResponse:
-    request_id, correlation_id = _identifiers()
+    """The standardized :class:`~cerebrum.api.schemas.envelope.ErrorResponse`
+    builder every handler below uses. Public — and reused directly (not
+    only through a raised :class:`~cerebrum.shared.errors.base.PlatformException`)
+    by middleware that must reject a request before any exception
+    handler can see it, e.g.
+    cerebrum.middleware.request_size_limit.RequestSizeLimitMiddleware —
+    see cerebrum.middleware.authentication's docstring for why exceptions
+    raised inside ``BaseHTTPMiddleware.dispatch()`` bypass
+    ``@app.exception_handler`` entirely.
+    """
+    request_id, correlation_id = _identifiers(request)
     settings = get_settings()
     body = ErrorResponse(
         error_code=error_code,
@@ -55,7 +75,7 @@ def _envelope(
     return JSONResponse(status_code=http_status, content=body.model_dump(mode="json"))
 
 
-async def handle_platform_exception(_request: Request, exc: Exception) -> JSONResponse:
+async def handle_platform_exception(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, PlatformException)
     _logger.error(
         "exception.platform",
@@ -65,15 +85,23 @@ async def handle_platform_exception(_request: Request, exc: Exception) -> JSONRe
         message=exc.message,
         context=exc.context,
     )
-    return _envelope(
+    response = build_error_response(
+        request,
         error_code=exc.error_code,
         message=exc.message,
         http_status=exc.http_status,
         retryable=exc.retryable,
     )
+    if isinstance(exc, RateLimitExceededException):
+        # Graceful throttling per
+        # docs/architecture/specification/81_API_Standards.md's Rate
+        # Limiting section: an early, standard signal for when to retry,
+        # not just a bare 429.
+        response.headers["Retry-After"] = str(exc.retry_after_seconds)
+    return response
 
 
-async def handle_validation_error(_request: Request, exc: Exception) -> JSONResponse:
+async def handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
     details = [
         ErrorDetail(
@@ -82,7 +110,8 @@ async def handle_validation_error(_request: Request, exc: Exception) -> JSONResp
         for error in exc.errors()
     ]
     _logger.warning("exception.validation", errors=details)
-    return _envelope(
+    return build_error_response(
+        request,
         error_code="REQUEST_VALIDATION_ERROR",
         message="Request validation failed.",
         http_status=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -90,10 +119,11 @@ async def handle_validation_error(_request: Request, exc: Exception) -> JSONResp
     )
 
 
-async def handle_http_exception(_request: Request, exc: Exception) -> JSONResponse:
+async def handle_http_exception(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)
     _logger.info("exception.http", status_code=exc.status_code, detail=exc.detail)
-    return _envelope(
+    return build_error_response(
+        request,
         error_code=f"HTTP_{exc.status_code}",
         message=str(exc.detail),
         http_status=exc.status_code,
@@ -113,12 +143,11 @@ def _unexpected_exception_message(exc: Exception, settings: Settings) -> str:
     return f"An unexpected error occurred: {exc}"
 
 
-async def handle_unexpected_exception(
-    _request: Request, exc: Exception
-) -> JSONResponse:
+async def handle_unexpected_exception(request: Request, exc: Exception) -> JSONResponse:
     settings = get_settings()
     _logger.exception("exception.unexpected", exception_type=type(exc).__name__)
-    return _envelope(
+    return build_error_response(
+        request,
         error_code="UNEXPECTED_ERROR",
         message=_unexpected_exception_message(exc, settings),
         http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
