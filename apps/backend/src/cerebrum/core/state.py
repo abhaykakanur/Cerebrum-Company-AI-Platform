@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
+import httpx
+
 from cerebrum.config.settings import Settings
 from cerebrum.core.observability import MetricsRegistry, Tracer
 from cerebrum.events.dispatcher import EventDispatcher
@@ -43,6 +45,16 @@ class ApplicationState:
     qdrant: QdrantClientManager
     minio: MinIOClientManager
     opensearch: OpenSearchClientManager
+    http_client: httpx.AsyncClient
+    """A single pooled ``httpx.AsyncClient`` shared by every
+    cerebrum.infrastructure.llm provider adapter that speaks HTTP
+    (OpenAI/Anthropic/Gemini/Ollama) — see cerebrum.core.lifecycle for
+    its construction/``aclose()``. Not an
+    ``InfrastructureClientManager``: unlike the datastore clients above,
+    opening an ``httpx.AsyncClient`` does no I/O and has no
+    connect/retry semantics to track — it lazily opens connections per
+    request.
+    """
     started_at: datetime = field(default_factory=utcnow)
 
     # Background Processing Layer placeholder — see cerebrum.workers,

@@ -17,7 +17,7 @@ anything else.
 3. Skim [`docs/architecture/specification/README.md`](../architecture/specification/README.md)
    — you don't need to read all 108+ CES documents now, but you need to
    know they exist and that this codebase implements them, not the other
-   way around. When you're unsure *why* something is built a certain
+   way around. When you're unsure _why_ something is built a certain
    way, the answer is almost always in one of these documents.
 4. Read [`docs/architecture/dependency-rules.md`](../architecture/dependency-rules.md)
    and [`docs/architecture/coding-guidelines.md`](../architecture/coding-guidelines.md)
@@ -25,28 +25,29 @@ anything else.
 
 ## What Actually Exists Right Now
 
-As of CIS Phase 1 Prompt 7 (Production Readiness & Platform Hardening,
-the final prompt of Phase 1), this repository is a **fully hardened
-platform foundation with no business functionality**:
+The Phase 1 platform foundation (below) is complete, and every business
+domain built on top of it is real and running, not scaffolding:
 
-| Layer | Status |
-|---|---|
-| Infrastructure clients (PostgreSQL, Redis, Neo4j, Qdrant, MinIO, OpenSearch) | Connected, with retry and graceful degradation — see `docs/architecture/infrastructure/`. |
-| Identity, Security & Multi-Tenancy | JWT auth, RBAC, API keys, sessions — see `docs/architecture/security/`. |
-| API Platform | Pagination, filtering, sorting, response envelopes, versioning, rate limiting, OpenAPI — see `docs/architecture/api/`. |
-| Production hardening | Config validation, Docker image, CI pipeline — this document's own milestone. |
-| Business domains (Identity Platform, Knowledge, Search, AI, ...) | **Not started.** Phase 2 onward — see `docs/architecture/specification/110_Implementation_Roadmap.md`. |
+| Layer                                                                                                                                                 | Status                                                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Infrastructure clients (PostgreSQL, Redis, Neo4j, Qdrant, MinIO, OpenSearch)                                                                          | Connected, with retry and graceful degradation — see `docs/architecture/infrastructure/`.                              |
+| Identity, Security & Multi-Tenancy                                                                                                                    | JWT auth, RBAC, API keys, sessions — see `docs/architecture/security/`.                                                |
+| API Platform                                                                                                                                          | Pagination, filtering, sorting, response envelopes, versioning, rate limiting, OpenAPI — see `docs/architecture/api/`. |
+| Production hardening                                                                                                                                  | Config validation, Docker image, CI pipeline — this document's own milestone.                                          |
+| Business domains (documents/processing, knowledge graph, semantic search, retrieval/RAG, AI chat, connectors, workflows, Employee Knowledge Capsules) | Implemented — `apps/backend/src/cerebrum/application/`, 130+ API routes (`docs/api/README.md`).                        |
+| Frontend                                                                                                                                              | Implemented against every domain above — `apps/frontend/README.md`.                                                    |
 
 If you're looking for where "the product" lives — document ingestion,
-search, AI chat — it doesn't exist yet. You are working on the
-foundation those features will be built on.
+search, AI chat, the Employee Knowledge Capsule UI — start at
+`apps/frontend/app/(app)/` for the pages and `apps/backend/src/cerebrum/application/`
+for the business logic they call.
 
 ## Codebase Tour
 
 ```
 apps/backend/src/cerebrum/
 ├── api/            HTTP routing + response schemas. No business logic.
-├── application/    Use cases (currently: application/auth/ only).
+├── application/    Use cases (auth, knowledge, knowledge_graph, semantic, retrieval, ai, conversation, connectors, workflows, capsules).
 ├── config/         Typed, validated settings — one class per subsystem.
 ├── core/           Application Factory, lifecycle, logging, exceptions.
 ├── dependencies/   FastAPI DI providers.
@@ -64,18 +65,18 @@ responsibilities and what may import what:
 
 ## How to Find Your Way to a Specific Answer
 
-| Question | Where |
-|---|---|
-| "Why does X work this way?" | The relevant CES document under `docs/architecture/specification/` — check the module's own docstring first, it usually cites the exact document. |
-| "What can I import from where?" | `docs/architecture/dependency-rules.md`, `docs/architecture/import-rules.md`. |
-| "How do I add a new FastAPI dependency?" | `docs/architecture/dependency-injection.md`, `docs/architecture/api/dependency-guide.md`. |
-| "How does authentication/RBAC work?" | `docs/architecture/security/`. |
-| "How do I add pagination/filtering to a new endpoint?" | `docs/architecture/api/`. |
-| "How do I run this locally?" | `getting-started.md`. |
-| "How do I deploy this?" | `docs/deployment/production-deployment.md`. |
-| "Something's broken, now what?" | `docs/deployment/troubleshooting.md`. |
-| "What test do I write for X?" | `docs/testing/README.md`. |
-| "What's next on the roadmap?" | `docs/architecture/specification/110_Implementation_Roadmap.md`. |
+| Question                                               | Where                                                                                                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Why does X work this way?"                            | The relevant CES document under `docs/architecture/specification/` — check the module's own docstring first, it usually cites the exact document. |
+| "What can I import from where?"                        | `docs/architecture/dependency-rules.md`, `docs/architecture/import-rules.md`.                                                                     |
+| "How do I add a new FastAPI dependency?"               | `docs/architecture/dependency-injection.md`, `docs/architecture/api/dependency-guide.md`.                                                         |
+| "How does authentication/RBAC work?"                   | `docs/architecture/security/`.                                                                                                                    |
+| "How do I add pagination/filtering to a new endpoint?" | `docs/architecture/api/`.                                                                                                                         |
+| "How do I run this locally?"                           | `getting-started.md`.                                                                                                                             |
+| "How do I deploy this?"                                | `docs/deployment/production-deployment.md`.                                                                                                       |
+| "Something's broken, now what?"                        | `docs/deployment/troubleshooting.md`.                                                                                                             |
+| "What test do I write for X?"                          | `docs/testing/README.md`.                                                                                                                         |
+| "What's next on the roadmap?"                          | `docs/architecture/specification/110_Implementation_Roadmap.md`.                                                                                  |
 
 ## The CIS Prompt Model
 

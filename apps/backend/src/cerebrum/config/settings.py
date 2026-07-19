@@ -14,6 +14,7 @@ from functools import lru_cache
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config.ai import AISettings
 from cerebrum.config.api import APISettings
 from cerebrum.config.application import ApplicationSettings
 from cerebrum.config.database import PostgresSettings
@@ -73,6 +74,7 @@ class Settings(BaseSettings):
     worker: WorkerSettings = Field(default_factory=WorkerSettings)
     monitoring: MonitoringSettings = Field(default_factory=MonitoringSettings)
     documents: DocumentSettings = Field(default_factory=DocumentSettings)
+    ai: AISettings = Field(default_factory=AISettings)
 
     @model_validator(mode="after")
     def _validate_for_environment(self) -> "Settings":

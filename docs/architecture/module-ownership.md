@@ -23,15 +23,15 @@ table below is a template, populated as each domain lands, mirroring
 `docs/architecture/specification/106_Requirement_Traceability.md`'s
 domain list.
 
-| Domain | Backend Location | Owner | Status |
-|---|---|---|---|
-| Identity | `domain/identity/`, `application/identity/` | _unassigned_ | Not started |
-| Workspace | `domain/workspace/` | _unassigned_ | Not started |
-| Organization | `domain/organization/` | _unassigned_ | Not started |
-| User Management | `domain/user_management/` | _unassigned_ | Not started |
-| Authentication | `domain/authentication/` | _unassigned_ | Not started |
-| Authorization | `domain/authorization/` | _unassigned_ | Not started |
-| *(remaining 24 domains)* | — | _unassigned_ | Not started |
+| Domain                   | Backend Location                            | Owner        | Status      |
+| ------------------------ | ------------------------------------------- | ------------ | ----------- |
+| Identity                 | `domain/identity/`, `application/identity/` | _unassigned_ | Not started |
+| Workspace                | `domain/workspace/`                         | _unassigned_ | Not started |
+| Organization             | `domain/organization/`                      | _unassigned_ | Not started |
+| User Management          | `domain/user_management/`                   | _unassigned_ | Not started |
+| Authentication           | `domain/authentication/`                    | _unassigned_ | Not started |
+| Authorization            | `domain/authorization/`                     | _unassigned_ | Not started |
+| _(remaining 24 domains)_ | —                                           | _unassigned_ | Not started |
 
 See `docs/architecture/specification/106_Requirement_Traceability.md` for
 the complete 30-domain list with each domain's full architecture-component

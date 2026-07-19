@@ -7,7 +7,7 @@ pattern every route here reuses identically.
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from cerebrum.api.openapi_responses import STANDARD_ERROR_RESPONSES
@@ -37,6 +37,12 @@ from cerebrum.api.schemas.knowledge import (
     ProcessingJobResponse,
     ReprocessRequest,
 )
+from cerebrum.api.schemas.semantic import (
+    EmbeddingJobResponse,
+    RegenerateEmbeddingsRequest,
+    ReindexResponse,
+    SearchHitResponse,
+)
 from cerebrum.dependencies.auth import (
     AuditServiceDep,
     CurrentUserDep,
@@ -54,10 +60,17 @@ from cerebrum.dependencies.knowledge import (
     UploadServiceDep,
     VersionServiceDep,
 )
+from cerebrum.dependencies.knowledge_graph import EntityServiceDep
 from cerebrum.dependencies.pagination import FilterDep, PaginationDep, SortDep
+from cerebrum.dependencies.semantic import (
+    EmbeddingServiceDep,
+    HybridSearchServiceDep,
+    SearchServiceDep,
+)
 from cerebrum.dependencies.settings import SettingsDep
 from cerebrum.infrastructure.database.models.audit import AuditEventType
 from cerebrum.infrastructure.database.models.document_version import VersionType
+from cerebrum.infrastructure.embeddings.kind import EmbeddingKind
 from cerebrum.middleware.context import get_client_ip
 from cerebrum.repositories.contracts import map_page
 from cerebrum.shared.errors.exceptions import NotFoundException
@@ -853,4 +866,133 @@ async def cancel_processing(
     return build_success_response(
         CancelProcessingResponse(cancelled_job_count=cancelled_count),
         settings=settings,
+    )
+
+
+# --- Semantic (nested, CIS Phase 3 Prompt 2) ----------------------------------
+
+
+@router.post(
+    "/{document_id}/versions/{version_id}/reindex",
+    response_model=SuccessResponse[ReindexResponse],
+    dependencies=[Depends(require_permission("documents:write"))],
+)
+async def reindex_version(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    workspace_id: WorkspaceIdDep,
+    current_user: CurrentUserDep,
+    documents: DocumentServiceDep,
+    chunking: ChunkingServiceDep,
+    entities: EntityServiceDep,
+    search: SearchServiceDep,
+    settings: SettingsDep,
+) -> SuccessResponse[ReindexResponse]:
+    """Re-index — CIS Phase 3 Prompt 2's requirement: re-runs Search
+    Indexing alone (the document, its chunks, and its entities) without
+    re-running extraction/chunking/graph/embedding — useful after a
+    manual edit to a document's tags/metadata that
+    cerebrum.api.v1.documents.reprocess_version's full pipeline re-run
+    would be overkill for.
+    """
+    document = await documents.get(document_id, workspace_id=workspace_id)
+    chunks = await chunking.list_chunks(version_id, workspace_id=workspace_id)
+    version_entities = await entities.list_by_source_chunks(
+        [chunk.id for chunk in chunks], workspace_id=workspace_id
+    )
+    indexed_count = await search.index_version(
+        document=document,
+        document_version_id=version_id,
+        chunks=chunks,
+        entities=version_entities,
+        workspace_id=workspace_id,
+        organization_id=current_user.organization_id,
+    )
+    return build_success_response(
+        ReindexResponse(indexed_count=indexed_count), settings=settings
+    )
+
+
+@router.post(
+    "/{document_id}/versions/{version_id}/embeddings/regenerate",
+    response_model=SuccessResponse[EmbeddingJobResponse],
+    dependencies=[Depends(require_permission("documents:write"))],
+)
+async def regenerate_embeddings(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    workspace_id: WorkspaceIdDep,
+    embeddings: EmbeddingServiceDep,
+    settings: SettingsDep,
+    body: RegenerateEmbeddingsRequest | None = None,
+) -> SuccessResponse[EmbeddingJobResponse]:
+    """Regeneration — CIS Phase 3 Prompt 2's requirement: re-embeds
+    every artifact for this version, bypassing Incremental Updates'
+    skip-if-current-version check (``force=True`` by default — see
+    cerebrum.application.semantic.embedding_service.EmbeddingService's
+    docstring).
+    """
+    force = body.force if body is not None else True
+    job = await embeddings.embed_version(
+        version_id, workspace_id=workspace_id, force=force
+    )
+    return build_success_response(
+        EmbeddingJobResponse.model_validate(job), settings=settings
+    )
+
+
+@router.get(
+    "/{document_id}/versions/{version_id}/similar",
+    response_model=SuccessResponse[list[SearchHitResponse]],
+    dependencies=[Depends(require_permission("documents:read"))],
+)
+async def get_similar_documents(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    workspace_id: WorkspaceIdDep,
+    hybrid: HybridSearchServiceDep,
+    settings: SettingsDep,
+    limit: int = Query(default=10, ge=1, le=50),
+) -> SuccessResponse[list[SearchHitResponse]]:
+    """Similar Documents — CIS Phase 3 Prompt 2's requirement: vector
+    similarity against this version's document-summary embedding (see
+    cerebrum.application.semantic.embedding_service.EmbeddingService's
+    truncation-based summary).
+    """
+    hits = await hybrid.similar_to_source(
+        kind=EmbeddingKind.DOCUMENT_SUMMARY.value,
+        source_id=version_id,
+        workspace_id=workspace_id,
+        limit=limit,
+    )
+    return build_success_response(
+        [SearchHitResponse.from_hit(hit) for hit in hits], settings=settings
+    )
+
+
+@router.get(
+    "/{document_id}/versions/{version_id}/chunks/{chunk_id}/similar",
+    response_model=SuccessResponse[list[SearchHitResponse]],
+    dependencies=[Depends(require_permission("documents:read"))],
+)
+async def get_similar_chunks(
+    document_id: uuid.UUID,
+    version_id: uuid.UUID,
+    chunk_id: uuid.UUID,
+    workspace_id: WorkspaceIdDep,
+    hybrid: HybridSearchServiceDep,
+    settings: SettingsDep,
+    limit: int = Query(default=10, ge=1, le=50),
+) -> SuccessResponse[list[SearchHitResponse]]:
+    """Similar Chunks — CIS Phase 3 Prompt 2's requirement: vector
+    similarity against ``chunk_id``'s own chunk embedding.
+    """
+    hits = await hybrid.similar_to_source(
+        kind=EmbeddingKind.CHUNK.value,
+        source_id=chunk_id,
+        workspace_id=workspace_id,
+        limit=limit,
+    )
+    return build_success_response(
+        [SearchHitResponse.from_hit(hit) for hit in hits], settings=settings
     )

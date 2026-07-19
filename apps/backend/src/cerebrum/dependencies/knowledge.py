@@ -25,12 +25,18 @@ from cerebrum.application.knowledge.tag_service import TagService
 from cerebrum.application.knowledge.upload_service import UploadService
 from cerebrum.application.knowledge.version_service import VersionService
 from cerebrum.application.knowledge.workspace_service import WorkspaceService
+from cerebrum.application.knowledge_graph.entity_service import EntityService
 from cerebrum.dependencies.database import DbSessionDep
 from cerebrum.dependencies.infrastructure import (
     EventDispatcherDep,
     MinIODep,
+    Neo4jDep,
+    OpenSearchDep,
+    QdrantDep,
     RedisDep,
 )
+from cerebrum.dependencies.knowledge_graph import get_knowledge_graph_service
+from cerebrum.dependencies.semantic import get_embedding_service, get_search_service
 from cerebrum.dependencies.settings import SettingsDep
 from cerebrum.infrastructure.queue.redis_queue import RedisQueue
 from cerebrum.infrastructure.security.virus_scan import NoOpVirusScanner
@@ -54,6 +60,7 @@ from cerebrum.repositories.postgres.document_repository import DocumentRepositor
 from cerebrum.repositories.postgres.document_version_repository import (
     DocumentVersionRepository,
 )
+from cerebrum.repositories.postgres.entity_repository import EntityRepository
 from cerebrum.repositories.postgres.folder_repository import FolderRepository
 from cerebrum.repositories.postgres.label_repository import LabelRepository
 from cerebrum.repositories.postgres.organization_repository import (
@@ -173,17 +180,29 @@ def get_chunking_service(session: DbSessionDep) -> ChunkingService:
 def get_knowledge_preparation_service(
     session: DbSessionDep,
     minio_client: MinIODep,
+    neo4j_driver: Neo4jDep,
+    qdrant_client: QdrantDep,
+    opensearch_client: OpenSearchDep,
     settings: SettingsDep,
     event_dispatcher: EventDispatcherDep,
 ) -> KnowledgePreparationService:
     return KnowledgePreparationService(
         extraction_service=get_extraction_service(session, minio_client, settings),
         chunking_service=get_chunking_service(session),
+        graph_service=get_knowledge_graph_service(
+            session, neo4j_driver, event_dispatcher
+        ),
+        embedding_service=get_embedding_service(
+            session, qdrant_client, event_dispatcher
+        ),
+        search_service=get_search_service(session, opensearch_client, event_dispatcher),
+        entity_service=EntityService(entity_repository=EntityRepository(session)),
         manifest_repository=DocumentManifestRepository(session),
         extraction_repository=DocumentExtractionRepository(session),
         job_repository=ProcessingJobRepository(session),
         version_repository=DocumentVersionRepository(session),
         document_repository=DocumentRepository(session),
+        workspace_repository=WorkspaceRepository(session),
         event_dispatcher=event_dispatcher,
     )
 

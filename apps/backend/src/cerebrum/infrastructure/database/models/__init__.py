@@ -18,10 +18,37 @@ defined and never imported anywhere is invisible to
 
 from cerebrum.infrastructure.database.models.api_key import APIKey
 from cerebrum.infrastructure.database.models.audit import AuditEvent, AuditEventType
+from cerebrum.infrastructure.database.models.capsule import EmployeeKnowledgeCapsule
+from cerebrum.infrastructure.database.models.capsule_evidence import (
+    CapsuleEvidenceRecord,
+)
+from cerebrum.infrastructure.database.models.capsule_timeline_event import (
+    CapsuleTimelineEvent,
+)
 from cerebrum.infrastructure.database.models.chunk import Chunk, ChunkingStrategy
 from cerebrum.infrastructure.database.models.collection import (
     Collection,
     CollectionDocument,
+)
+from cerebrum.infrastructure.database.models.connector import (
+    Connector,
+    ConnectorAuthType,
+    ConnectorHealthStatus,
+    ConnectorStatus,
+    ConnectorType,
+)
+from cerebrum.infrastructure.database.models.connector_sync_mapping import (
+    ConnectorSyncMapping,
+    MappingSyncStatus,
+)
+from cerebrum.infrastructure.database.models.connector_sync_run import (
+    ConnectorSyncRun,
+    SyncRunStatus,
+    SyncType,
+)
+from cerebrum.infrastructure.database.models.conversation import (
+    Conversation,
+    ConversationStatus,
 )
 from cerebrum.infrastructure.database.models.document import Document, DocumentStatus
 from cerebrum.infrastructure.database.models.document_extraction import (
@@ -41,14 +68,20 @@ from cerebrum.infrastructure.database.models.document_version import (
     UploadStatus,
     VersionType,
 )
+from cerebrum.infrastructure.database.models.entity import Entity, EntityType
 from cerebrum.infrastructure.database.models.folder import Folder
 from cerebrum.infrastructure.database.models.label import DocumentLabel, Label
 from cerebrum.infrastructure.database.models.membership import WorkspaceMembership
+from cerebrum.infrastructure.database.models.message import Message, MessageRole
 from cerebrum.infrastructure.database.models.organization import Organization
 from cerebrum.infrastructure.database.models.processing_job import (
     ProcessingJob,
     ProcessingJobStatus,
     ProcessingJobType,
+)
+from cerebrum.infrastructure.database.models.relationship import (
+    Relationship,
+    RelationshipType,
 )
 from cerebrum.infrastructure.database.models.role import (
     Permission,
@@ -58,16 +91,46 @@ from cerebrum.infrastructure.database.models.role import (
 from cerebrum.infrastructure.database.models.session import UserSession
 from cerebrum.infrastructure.database.models.tag import DocumentTag, Tag
 from cerebrum.infrastructure.database.models.user import User
+from cerebrum.infrastructure.database.models.workflow import Workflow, WorkflowStatus
+from cerebrum.infrastructure.database.models.workflow_run import (
+    WorkflowRun,
+    WorkflowRunStatus,
+)
+from cerebrum.infrastructure.database.models.workflow_schedule import (
+    ScheduleStatus,
+    ScheduleType,
+    WorkflowSchedule,
+)
+from cerebrum.infrastructure.database.models.workflow_step_run import (
+    WorkflowStepRun,
+    WorkflowStepRunStatus,
+)
+from cerebrum.infrastructure.database.models.workflow_version import (
+    StepType,
+    TriggerType,
+    WorkflowVersion,
+)
 from cerebrum.infrastructure.database.models.workspace import Workspace
 
 __all__ = [
     "APIKey",
     "AuditEvent",
     "AuditEventType",
+    "CapsuleEvidenceRecord",
+    "CapsuleTimelineEvent",
     "Chunk",
     "ChunkingStrategy",
     "Collection",
     "CollectionDocument",
+    "Connector",
+    "ConnectorAuthType",
+    "ConnectorHealthStatus",
+    "ConnectorStatus",
+    "ConnectorSyncMapping",
+    "ConnectorSyncRun",
+    "ConnectorType",
+    "Conversation",
+    "ConversationStatus",
     "Document",
     "DocumentExtraction",
     "DocumentLabel",
@@ -76,23 +139,45 @@ __all__ = [
     "DocumentStatus",
     "DocumentTag",
     "DocumentVersion",
+    "EmployeeKnowledgeCapsule",
+    "Entity",
+    "EntityType",
     "ExtractionStatus",
     "Folder",
     "Label",
     "ManifestStatus",
+    "MappingSyncStatus",
+    "Message",
+    "MessageRole",
     "Organization",
     "Permission",
     "ProcessingJob",
     "ProcessingJobStatus",
     "ProcessingJobType",
     "QuarantineStatus",
+    "Relationship",
+    "RelationshipType",
     "Role",
     "RolePermission",
+    "ScheduleStatus",
+    "ScheduleType",
+    "StepType",
+    "SyncRunStatus",
+    "SyncType",
     "Tag",
+    "TriggerType",
     "UploadStatus",
     "UserSession",
     "User",
     "VersionType",
+    "Workflow",
+    "WorkflowRun",
+    "WorkflowRunStatus",
+    "WorkflowSchedule",
+    "WorkflowStatus",
+    "WorkflowStepRun",
+    "WorkflowStepRunStatus",
+    "WorkflowVersion",
     "Workspace",
     "WorkspaceMembership",
 ]

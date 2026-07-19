@@ -6,8 +6,16 @@
 not split per-service — at six services, a single readable file is easier
 to reason about than fragmented includes, consistent with
 `docs/architecture/specification/04_Project_Principles.md`'s "Simple
-architecture over unnecessary complexity." Splitting becomes worth
-revisiting only once application services are added in a later phase.
+architecture over unnecessary complexity."
+
+The backend and frontend application containers (CIS Phase 5 Prompt 4)
+live in a second file, `infrastructure/docker/docker-compose.apps.yml`,
+rather than being merged into this one — brought in via Compose's
+`include:` directive so `docker-compose.yml` stays usable standalone for
+local development that runs the applications directly on the host (`uv
+run`/`pnpm dev`), while `docker-compose.apps.yml` provisions the full
+containerized stack in one command. See
+[production-deployment.md](production-deployment.md) for how to run it.
 
 ## Named Volumes
 
@@ -30,7 +38,7 @@ things:
 1. Docker's own container status (`docker ps`, `docker inspect`) reports
    `healthy`/`unhealthy`, which `scripts/doctor.sh` reads directly.
 2. The `minio-init` one-shot job uses `depends_on: condition:
-   service_healthy` to wait for MinIO before attempting bucket creation —
+service_healthy` to wait for MinIO before attempting bucket creation —
    the only inter-service dependency in this stack, since the six
    datastores are otherwise peers with no startup-order requirement
    between them.

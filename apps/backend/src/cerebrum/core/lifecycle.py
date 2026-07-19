@@ -24,6 +24,7 @@ import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 
 from cerebrum.config.settings import Settings
@@ -64,6 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         opensearch=OpenSearchClientManager(
             settings.opensearch, settings.infrastructure, infra_logger
         ),
+        http_client=httpx.AsyncClient(timeout=settings.ai.request_timeout_seconds),
     )
     app.state.cerebrum = state
     _logger.info("startup.state_initialized")
@@ -124,6 +126,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         state.qdrant.disconnect(),
         state.minio.disconnect(),
         state.opensearch.disconnect(),
+        state.http_client.aclose(),
     )
     _logger.info("shutdown.infrastructure_clients_closed")
     _logger.info("shutdown.complete")

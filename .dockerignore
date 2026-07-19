@@ -32,15 +32,22 @@
 **/htmlcov/
 **/.coverage
 
-# Node / frontend workspace — irrelevant to the backend image
-apps/frontend/
-packages/
+# Node / frontend workspace — apps/backend/Dockerfile never COPYs these
+# paths, and apps/frontend/Dockerfile only COPYs specific package.json
+# files plus apps/frontend/ and packages/ source directly (not via
+# `COPY . .`), so excluding node_modules/build-output here is a
+# build-speed/hygiene safeguard for both images, not a path either
+# Dockerfile depends on being absent.
 node_modules/
 **/node_modules/
+apps/frontend/.next/
+apps/frontend/out/
+packages/*/dist/
 
 # Docs, tests, and non-build-context repo scaffolding
 docs/
 apps/backend/tests/
+apps/frontend/tests/
 scripts/
 examples/
 assets/

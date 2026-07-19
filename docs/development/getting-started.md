@@ -2,13 +2,13 @@
 
 ## Prerequisites
 
-| Tool | Version | Why |
-|---|---|---|
+| Tool                                          | Version    | Why                                                                     |
+| --------------------------------------------- | ---------- | ----------------------------------------------------------------------- |
 | [Docker](https://docs.docker.com/get-docker/) | Compose v2 | Runs local infrastructure — see `docs/deployment/local-development.md`. |
-| [Node.js](https://nodejs.org/) | 20+ | Frontend and shared TypeScript packages. |
-| [pnpm](https://pnpm.io/) | 9+ | TypeScript workspace package manager. |
-| [uv](https://docs.astral.sh/uv/) | latest | Python package/environment manager. |
-| Git | any recent | Version control. |
+| [Node.js](https://nodejs.org/)                | 20+        | Frontend and shared TypeScript packages.                                |
+| [pnpm](https://pnpm.io/)                      | 9+         | TypeScript workspace package manager.                                   |
+| [uv](https://docs.astral.sh/uv/)              | latest     | Python package/environment manager.                                     |
+| Git                                           | any recent | Version control.                                                        |
 
 ## Clone and Set Up
 
@@ -40,38 +40,46 @@ something doesn't come up cleanly.
 ## Run Things
 
 ```bash
-# Frontend dev server (http://localhost:3000 — a placeholder page at this milestone)
+# Frontend dev server (http://localhost:3000)
 pnpm --filter @cerebrum/frontend dev
 
-# Backend dev server (http://localhost:8000 — platform endpoints only, see apps/backend/README.md)
+# Backend dev server (http://localhost:8000 — see apps/backend/README.md)
 uv run uvicorn cerebrum.main:app --reload
 
 # Backend unit tests
 uv run pytest apps/backend/tests -m unit
+
+# Frontend unit tests
+pnpm --filter @cerebrum/frontend test
 
 # Everything at once (format check + lint + typecheck + unit tests)
 scripts/validate.sh
 ```
 
 With the backend running, `curl http://localhost:8000/health` and
-`http://localhost:8000/api/v1/docs` should both respond. Try logging in
-via `/api/v1/docs`'s interactive "Authorize" flow once you've seeded a
-user (see `apps/backend/tests/unit/_auth_factories.py` for the pattern —
-no registration endpoint exists yet, see `apps/backend/README.md`'s
-Limitations).
+`http://localhost:8000/api/v1/docs` should both respond. There is no
+registration endpoint — accounts are provisioned out-of-band (see
+`apps/backend/tests/unit/_auth_factories.py` for the pattern used in
+tests, or seed one directly); once you have credentials, `/login` on the
+frontend is the real sign-in flow, not `/api/v1/docs`'s "Authorize"
+button.
 
 ## What You Should See
 
-Phase 1 (Foundation) is complete — there is no *business* functionality
-yet (no document upload, no dashboard, no AI chat), but the full
-platform foundation is real and running. What you should see:
+Both applications are real, running software — not scaffolding. What you
+should see:
 
-- The frontend serves a placeholder page confirming the build pipeline
-  works.
+- The frontend serves a working login flow and, once authenticated with
+  at least one workspace, the full application shell: Dashboard, AI
+  Chat, Enterprise Search, Knowledge Graph, Document Explorer, Connector
+  and Workflow Dashboards, Employee Knowledge Capsules, Administration,
+  and Monitoring — see `apps/frontend/README.md` for the complete list
+  and its "Known Limitations" section for what's deliberately scoped
+  out.
 - The backend starts, serves `/health` (with version and build
-  information), `/live`, `/ready`, `/api/versions`, and `/api/v1/docs`,
-  and every backend unit test passes (246 as of CIS Phase 1 Prompt 7 —
-  see `docs/testing/README.md`).
+  information), `/live`, `/ready`, `/api/versions`, and `/api/v1/docs`
+  (130+ routes across 21 domains — see `docs/api/README.md`), and every
+  backend unit test passes (see `docs/testing/README.md`).
 - All six infrastructure services report healthy via `scripts/doctor.sh`
   **and** the backend actually connects to all six at startup — `/health`
   reports each as `healthy` (or `unavailable` with a real error detail if

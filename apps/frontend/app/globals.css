@@ -3,9 +3,168 @@
 @tailwind utilities;
 
 /*
- * No custom global styles beyond the Tailwind layers are added here.
- * Per the Design-System-First mandate
- * (docs/architecture/specification/85_Frontend_Architecture.md), every
- * visual value is expected to come from Design Tokens
- * (tailwind.config.ts) once populated — not from ad hoc CSS in this file.
+ * Design Token values (Color category) — Enterprise Design System,
+ * docs/architecture/specification/86_Enterprise_Design_System.md.
+ * Expressed as HSL triplets (no `hsl()` wrapper) so Tailwind color
+ * tokens in tailwind.config.ts can apply alpha via
+ * `hsl(var(--x) / <alpha-value>)`. Dark Theme First: `:root` IS the
+ * dark palette; `.light` overrides it, rather than the reverse — see
+ * that document's Visual Language section.
  */
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --background-elevated: 222 41% 9%;
+    --background-overlay: 222 38% 12%;
+    --foreground: 210 40% 98%;
+    --foreground-muted: 215 20% 65%;
+    --border: 217 33% 17%;
+    --border-strong: 217 33% 24%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 262 83% 66%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 152 69% 45%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --danger: 0 84% 63%;
+    --danger-foreground: 210 40% 98%;
+    --info: 189 94% 46%;
+    --info-foreground: 222 47% 11%;
+
+    --ring: 217 91% 60%;
+
+    --card: 222 41% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 38% 12%;
+    --popover-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --input: 217 33% 17%;
+  }
+
+  /* Redundant with :root by design — next-themes adds/removes a "dark"
+   * class token on <html>; keeping the dark palette on both :root and
+   * .dark means the pre-hydration default (no class yet) already
+   * matches the "dark" theme, avoiding a flash of incorrect theme. */
+  .dark {
+    --background: 222 47% 6%;
+    --background-elevated: 222 41% 9%;
+    --background-overlay: 222 38% 12%;
+    --foreground: 210 40% 98%;
+    --foreground-muted: 215 20% 65%;
+    --border: 217 33% 17%;
+    --border-strong: 217 33% 24%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 262 83% 66%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 152 69% 45%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --danger: 0 84% 63%;
+    --danger-foreground: 210 40% 98%;
+    --info: 189 94% 46%;
+    --info-foreground: 222 47% 11%;
+
+    --ring: 217 91% 60%;
+
+    --card: 222 41% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 38% 12%;
+    --popover-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --input: 217 33% 17%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --background-elevated: 210 40% 98%;
+    --background-overlay: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --foreground-muted: 215 16% 40%;
+    --border: 214 32% 91%;
+    --border-strong: 214 32% 82%;
+
+    --primary: 217 91% 52%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 262 83% 58%;
+    --secondary-foreground: 210 40% 98%;
+
+    --success: 152 69% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 42%;
+    --warning-foreground: 210 40% 98%;
+    --danger: 0 72% 51%;
+    --danger-foreground: 210 40% 98%;
+    --info: 189 85% 36%;
+    --info-foreground: 210 40% 98%;
+
+    --ring: 217 91% 52%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 40%;
+    --accent: 210 40% 94%;
+    --accent-foreground: 222 47% 11%;
+    --input: 214 32% 91%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings:
+      "cv02",
+      "cv03",
+      "cv04",
+      "cv11";
+  }
+
+  /* Reduced Motion accessibility rule — docs/architecture/specification/
+   * 85_Frontend_Architecture.md's Accessibility section. Every
+   * transition/animation is bounded by the Motion token durations
+   * (<250ms) already; this additionally removes motion entirely for
+   * users who've requested it at the OS level. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Premium Glassmorphism visual language primitive — Glass Card
+   * variant (components/ui/glass-card.tsx) is the only consumer;
+   * expressed as a utility so no component hardcodes the blur/opacity
+   * combination ad hoc. */
+  .glass-surface {
+    @apply border border-white/10 bg-white/5 backdrop-blur-lg;
+  }
+
+  .light .glass-surface {
+    @apply border-black/5 bg-white/60;
+  }
+}

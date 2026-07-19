@@ -15,6 +15,7 @@ per-request ``AsyncSession`` dependency instead of a raw client here.
 
 from typing import Annotated
 
+import httpx
 from fastapi import Depends
 from minio import Minio
 from neo4j import AsyncDriver
@@ -47,6 +48,10 @@ def get_opensearch(state: ApplicationStateDep) -> AsyncOpenSearch:
     return state.opensearch.client
 
 
+def get_http_client(state: ApplicationStateDep) -> httpx.AsyncClient:
+    return state.http_client
+
+
 def get_metrics_registry(state: ApplicationStateDep) -> MetricsRegistry:
     return state.metrics
 
@@ -64,6 +69,7 @@ Neo4jDep = Annotated[AsyncDriver, Depends(get_neo4j)]
 QdrantDep = Annotated[AsyncQdrantClient, Depends(get_qdrant)]
 MinIODep = Annotated[Minio, Depends(get_minio)]
 OpenSearchDep = Annotated[AsyncOpenSearch, Depends(get_opensearch)]
+HttpClientDep = Annotated[httpx.AsyncClient, Depends(get_http_client)]
 MetricsRegistryDep = Annotated[MetricsRegistry, Depends(get_metrics_registry)]
 TracerDep = Annotated[Tracer, Depends(get_tracer)]
 EventDispatcherDep = Annotated[EventDispatcher, Depends(get_event_dispatcher)]

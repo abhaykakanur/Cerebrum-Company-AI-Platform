@@ -22,25 +22,33 @@ implements; it does not redesign it. See
 for the full specification, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for
 what that means for how you work in this repository.
 
-**Current status: Phase 1 (Foundation) complete.** The backend is a
-production-hardened FastAPI application connected to all six datastores
-with JWT authentication (login/refresh/logout, with token rotation),
-Argon2 password hashing, an RBAC framework, API keys, session tracking,
-tenant-scoped request context, a reusable API platform layer
-(pagination/filtering/sorting, standardized response envelopes, an API
-Version Registry, OpenAPI documentation, general-purpose rate limiting,
-API metrics/tracing hooks), a production Docker image, a real CI
-pipeline, and enforced production configuration safety — with no
-business functionality yet. See
+**Current status: full-stack application, backend and frontend.** The
+backend is a production-hardened FastAPI application (130+ endpoints)
+connected to all six datastores, covering authentication/RBAC, documents
+and processing pipelines, the knowledge graph (entities/relationships),
+semantic and hybrid search, retrieval and RAG, AI conversations,
+connectors, workflow automation, and the Employee Knowledge Capsule
+domain (expertise/ownership/succession-risk analysis) — see
 [`apps/backend/README.md`](apps/backend/README.md),
 [`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md),
-[`docs/architecture/security/`](docs/architecture/security/README.md),
-[`docs/architecture/api/`](docs/architecture/api/README.md), and
+[`docs/architecture/security/`](docs/architecture/security/README.md), and
+[`docs/architecture/api/`](docs/architecture/api/README.md). The
+frontend is a Next.js/TypeScript application implementing every major
+feature area against those real endpoints — Dashboard, AI Chat,
+Enterprise Search, Knowledge Graph visualization, Document Explorer,
+Connector and Workflow Dashboards, the Employee Knowledge Capsule UI,
+Administration, and Monitoring — built on a hand-crafted Design System
+(no page introduces styling outside it); see
+[`apps/frontend/README.md`](apps/frontend/README.md) for the full list
+and its "Known Limitations" section for what's deliberately scoped out
+(no backend endpoint exists for it yet, rather than a fabricated UI).
+Both applications ship a production Docker image
+(`apps/backend/Dockerfile`, `apps/frontend/Dockerfile`), wired together
+via `infrastructure/docker/docker-compose.apps.yml` — see
 [`docs/deployment/production-deployment.md`](docs/deployment/production-deployment.md).
-This is the engineering scaffold every future implementation phase
-builds on. See
+See
 [`docs/architecture/specification/110_Implementation_Roadmap.md`](docs/architecture/specification/110_Implementation_Roadmap.md)
-for what comes next (Phase 2 onward).
+for the roadmap this implementation tracks against.
 
 ## Repository Structure
 
@@ -91,6 +99,13 @@ for the full walkthrough and
 [`docs/deployment/local-development.md`](docs/deployment/local-development.md)
 for the complete infrastructure command reference.
 
+To run the **full containerized stack** (both applications plus every
+datastore) instead of host-run dev servers:
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.apps.yml --env-file .env up -d --build
+```
+
 ## Technology Stack
 
 Python 3.12 + FastAPI (backend) · Next.js + TypeScript + Tailwind
@@ -103,23 +118,25 @@ for the architectural justification behind every choice.
 
 ## Documentation Map
 
-| I want to... | Read |
-|---|---|
-| Understand the product and its full architecture | [`docs/architecture/specification/`](docs/architecture/specification/README.md) |
-| Get my environment running | [`docs/development/getting-started.md`](docs/development/getting-started.md) |
-| Understand how this repo is organized | [`docs/architecture/repository-architecture.md`](docs/architecture/repository-architecture.md) |
-| Know what I can and can't import from where | [`docs/architecture/dependency-rules.md`](docs/architecture/dependency-rules.md) |
-| Understand how backend dependency injection works | [`docs/architecture/dependency-injection.md`](docs/architecture/dependency-injection.md) |
-| Understand the database/cache/graph/vector/storage/search clients | [`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md) |
-| Understand authentication, RBAC, multi-tenancy, API keys | [`docs/architecture/security/`](docs/architecture/security/README.md) |
-| Understand the API platform (pagination, responses, versioning, rate limiting) | [`docs/architecture/api/`](docs/architecture/api/README.md) |
-| Get oriented as a new contributor | [`docs/development/onboarding.md`](docs/development/onboarding.md) |
-| Write or run a test | [`docs/testing/README.md`](docs/testing/README.md) |
-| Deploy to production | [`docs/deployment/production-deployment.md`](docs/deployment/production-deployment.md) |
-| Fix a broken local/CI/Docker setup | [`docs/deployment/troubleshooting.md`](docs/deployment/troubleshooting.md) |
-| Run local infrastructure | [`docs/deployment/local-development.md`](docs/deployment/local-development.md) |
-| Contribute a change | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
-| Report a security issue | [`SECURITY.md`](SECURITY.md) |
+| I want to...                                                                   | Read                                                                                           |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Understand the product and its full architecture                               | [`docs/architecture/specification/`](docs/architecture/specification/README.md)                |
+| Get my environment running                                                     | [`docs/development/getting-started.md`](docs/development/getting-started.md)                   |
+| Understand how this repo is organized                                          | [`docs/architecture/repository-architecture.md`](docs/architecture/repository-architecture.md) |
+| Know what I can and can't import from where                                    | [`docs/architecture/dependency-rules.md`](docs/architecture/dependency-rules.md)               |
+| Understand how backend dependency injection works                              | [`docs/architecture/dependency-injection.md`](docs/architecture/dependency-injection.md)       |
+| Understand the database/cache/graph/vector/storage/search clients              | [`docs/architecture/infrastructure/`](docs/architecture/infrastructure/README.md)              |
+| Understand authentication, RBAC, multi-tenancy, API keys                       | [`docs/architecture/security/`](docs/architecture/security/README.md)                          |
+| Understand the API platform (pagination, responses, versioning, rate limiting) | [`docs/architecture/api/`](docs/architecture/api/README.md)                                    |
+| Get oriented as a new contributor                                              | [`docs/development/onboarding.md`](docs/development/onboarding.md)                             |
+| Write or run a test                                                            | [`docs/testing/README.md`](docs/testing/README.md)                                             |
+| Deploy to production                                                           | [`docs/deployment/production-deployment.md`](docs/deployment/production-deployment.md)         |
+| Back up or restore a datastore                                                 | [`docs/deployment/backup-and-recovery.md`](docs/deployment/backup-and-recovery.md)             |
+| Fix a broken local/CI/Docker setup                                             | [`docs/deployment/troubleshooting.md`](docs/deployment/troubleshooting.md)                     |
+| Run local infrastructure                                                       | [`docs/deployment/local-development.md`](docs/deployment/local-development.md)                 |
+| Understand the frontend's structure and implemented feature areas              | [`apps/frontend/README.md`](apps/frontend/README.md)                                           |
+| Contribute a change                                                            | [`CONTRIBUTING.md`](CONTRIBUTING.md)                                                           |
+| Report a security issue                                                        | [`SECURITY.md`](SECURITY.md)                                                                   |
 
 ## License
 

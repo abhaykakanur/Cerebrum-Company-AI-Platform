@@ -1,13 +1,15 @@
 # Production Deployment Guide
 
-CIS Phase 1 Prompt 7's Production Readiness deliverable — how to build,
-configure, and run the backend outside local development. See
-[docker-architecture.md](docker-architecture.md) for the *local*
+CIS Phase 1 Prompt 7's Production Readiness deliverable, extended by
+Phase 5 Prompt 4 to cover the frontend — how to build, configure, and
+run both applications outside local development. See
+[docker-architecture.md](docker-architecture.md) for the _local_
 Docker Compose stack (datastores only) and
 [96_Deployment_Strategy.md](../architecture/specification/96_Deployment_Strategy.md)
 for the seven deployment models this architecture supports; this
 document is the concrete "how," scoped to Container Deployment (the
-model `apps/backend/Dockerfile` targets today).
+model `apps/backend/Dockerfile` and `apps/frontend/Dockerfile` both
+target).
 
 ## Building the Image
 
@@ -31,19 +33,63 @@ See `apps/backend/Dockerfile`'s own header comment for the multi-stage
 build's structure (dependency layer cached separately from source, a
 non-root final image) and its note on why no `uv.lock` exists yet.
 
+## Building the Frontend Image
+
+Also from the **repository root** — the pnpm workspace spans
+`apps/frontend` and `packages/*`, so the build context must include the
+whole workspace, not just `apps/frontend`:
+
+```bash
+docker build -f apps/frontend/Dockerfile -t cerebrum-frontend \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.your-domain.example/api/v1 \
+  .
+```
+
+`NEXT_PUBLIC_API_BASE_URL` must be passed as a **build arg**, not a
+runtime environment variable — Next.js inlines every `NEXT_PUBLIC_*`
+value into the client bundle at build time (see `apps/frontend/next.config.js`),
+so the image must be rebuilt if the backend's public origin changes.
+This is a real constraint of static/SSR bundling, not an oversight: a
+frontend image built for `localhost:8000` cannot be redeployed against
+a different backend origin by changing an env var at container start.
+
+See `apps/frontend/Dockerfile`'s own header comment for the multi-stage
+build's structure (Next.js `output: "standalone"` pruning, a non-root
+final image — mirroring the backend Dockerfile's conventions exactly).
+
+## Running the Full Stack
+
+`infrastructure/docker/docker-compose.apps.yml` adds the backend and
+frontend containers on top of `docker-compose.yml`'s six datastores (via
+Compose's `include:`), wiring every service onto the same
+`cerebrum-network` bridge with the datastore hostnames resolved via
+Docker's internal DNS (`postgres`, `neo4j`, `redis`, `qdrant`, `minio`,
+`opensearch` — not `localhost`, which only works for host-run
+processes):
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.apps.yml --env-file .env up -d --build
+```
+
+Local development that runs the backend/frontend directly on the host
+(`uv run`/`pnpm dev`) should keep using `docker-compose.yml` alone for
+just the datastores — `docker-compose.apps.yml` is for exercising the
+full containerized stack, matching how it's actually deployed.
+
 ## Required Configuration
 
 Every setting in `.env.example` has a local-development-safe default.
 **None of them are production-safe as-is.** Before starting this image
 in a staging/production environment, at minimum:
 
-| Variable | Why it must change |
-|---|---|
-| `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `NEO4J_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` | Each defaults to `changeme-local-only` — see below, this is now an enforced startup failure, not just documentation. |
-| `JWT_SIGNING_SECRET` | Defaults to a placeholder published in this very repository. An unrotated value lets anyone forge a valid access token. |
-| `SECURITY_TRUSTED_HOSTS` | Defaults to `*`. Must be your real hostname(s). |
-| `SECURITY_CORS_ALLOWED_ORIGINS` | Defaults to `http://localhost:3000`. Must be your real frontend origin(s), and must never contain `*`. |
-| `ENVIRONMENT` | Must be `staging` or `production` — this is what activates every check below. |
+| Variable                                                                                        | Why it must change                                                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POSTGRES_PASSWORD`, `REDIS_PASSWORD`, `NEO4J_PASSWORD`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` | Each defaults to `changeme-local-only` — see below, this is now an enforced startup failure, not just documentation.                                                                                               |
+| `JWT_SIGNING_SECRET`                                                                            | Defaults to a placeholder published in this very repository. An unrotated value lets anyone forge a valid access token.                                                                                            |
+| `SECURITY_TRUSTED_HOSTS`                                                                        | Defaults to `*`. Must be your real hostname(s).                                                                                                                                                                    |
+| `SECURITY_CORS_ALLOWED_ORIGINS`                                                                 | Defaults to `http://localhost:3000`. Must be your real frontend origin(s), and must never contain `*`.                                                                                                             |
+| `ENVIRONMENT`                                                                                   | Must be `staging` or `production` — this is what activates every check below.                                                                                                                                      |
+| `NEXT_PUBLIC_API_BASE_URL` (frontend build arg)                                                 | Defaults to `http://localhost:8000/api/v1`. Must be the backend's real public origin, and — since it's baked into the client bundle at build time — set correctly _before_ building the frontend image, not after. |
 
 ### Startup Now Refuses to Boot on Default Secrets
 
@@ -86,10 +132,10 @@ these individually rather than from a file on disk.)
 
 ## Health Checks
 
-| Endpoint | Use |
-|---|---|
-| `GET /live` | Container/orchestrator liveness probe — matches `apps/backend/Dockerfile`'s own `HEALTHCHECK`. No dependency check; failure means restart the process. |
-| `GET /ready` | Orchestrator readiness probe — gated on PostgreSQL. Failure means stop routing traffic here, do not restart. |
+| Endpoint      | Use                                                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /live`   | Container/orchestrator liveness probe — matches `apps/backend/Dockerfile`'s own `HEALTHCHECK`. No dependency check; failure means restart the process.          |
+| `GET /ready`  | Orchestrator readiness probe — gated on PostgreSQL. Failure means stop routing traffic here, do not restart.                                                    |
 | `GET /health` | Human/dashboard-facing detailed status, including `version`, `build_commit`, `build_time`, and every datastore's individual status — see `cerebrum.api.health`. |
 
 See [38_Observability.md](../architecture/specification/38_Observability.md)'s
@@ -121,6 +167,32 @@ backward-compatible-migration requirement):
 ```bash
 cd apps/backend && uv run alembic upgrade head
 ```
+
+## Logging and Monitoring
+
+`LOG_LEVEL`/`LOG_FORMAT` (`.env.example`) control the backend's
+structured logging — `LOG_FORMAT=json` in staging/production so logs are
+machine-parseable by whatever log aggregation the deployment target
+provides (Deferred to Architecture which one, per
+[38_Observability.md](../architecture/specification/38_Observability.md)).
+`MONITORING_METRICS_ENABLED`/`MONITORING_TRACING_ENABLED` are present in
+`.env.example` but currently no-op (`cerebrum.core.observability` has no
+metrics/tracing exporter wired up yet) — flip them on only once a real
+exporter is implemented; setting them today changes nothing.
+
+What IS live today: `GET /health`'s per-component status (used by the
+frontend's Monitoring page), and the workspace-scoped usage/statistics
+endpoints (`/ai/statistics`, `/retrieval/statistics`,
+`/graph/statistics`, `ConnectorResponse.health_status`) that page
+aggregates. There is no server-side metrics time-series or alerting —
+the Monitoring page reflects current state on each load/poll, not
+historical trends.
+
+## Backups
+
+See [backup-and-recovery.md](backup-and-recovery.md) for backing up and
+restoring each of the six datastores — `scripts/backup.sh` automates the
+PostgreSQL backup; the other five are documented as manual commands.
 
 ## Scaling
 
