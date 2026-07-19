@@ -99,6 +99,11 @@ async def _seed(session: AsyncSession) -> tuple[uuid.UUID, uuid.UUID]:
     return ws.id, user.id
 
 
+class _FakeKnowledgePreparationService:
+    async def prepare(self, *args, **kwargs):
+        return None
+
+
 def _upload_service(
     session: AsyncSession,
     uploader: _FakeUploader,
@@ -121,6 +126,7 @@ def _upload_service(
             max_file_size_bytes=max_size, allowed_mime_types=allowed_mime or []
         ),
         audit_service=AuditService(audit_repository or _FakeAuditRepository()),  # type: ignore[arg-type]
+        preparation_service=_FakeKnowledgePreparationService(),  # type: ignore[arg-type]
     )
 
 

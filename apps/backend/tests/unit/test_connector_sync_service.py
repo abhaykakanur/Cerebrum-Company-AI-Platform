@@ -196,6 +196,11 @@ def _sync_service(
         tag_repository=TagRepository(session),
         label_repository=LabelRepository(session),
     )
+    # Shared with ConnectorSyncService below: UploadService.upload_new_version
+    # now invokes the knowledge preparation pipeline itself on a successful
+    # store, so this is the fake whose `.calls` a test actually observes —
+    # see connector_sync_service.py's `_sync_item`.
+    knowledge_preparation = knowledge_preparation or _FakeKnowledgePreparationService()
     upload_service = UploadService(
         version_service=VersionService(
             version_repository=DocumentVersionRepository(session),
@@ -207,6 +212,7 @@ def _sync_service(
         virus_scanner=NoOpVirusScanner(),
         settings=DocumentSettings(max_file_size_bytes=1_000_000, allowed_mime_types=[]),
         audit_service=audit,
+        preparation_service=knowledge_preparation,  # type: ignore[arg-type]
     )
     return ConnectorSyncService(
         connector_service=connector_service,
@@ -214,8 +220,7 @@ def _sync_service(
         sync_mapping_repository=ConnectorSyncMappingRepository(session),
         document_service=document_service,
         upload_service=upload_service,
-        knowledge_preparation_service=knowledge_preparation
-        or _FakeKnowledgePreparationService(),  # type: ignore[arg-type]
+        knowledge_preparation_service=knowledge_preparation,  # type: ignore[arg-type]
         http_client=http_client,
         event_dispatcher=events or EventDispatcher(),
         audit_service=audit,

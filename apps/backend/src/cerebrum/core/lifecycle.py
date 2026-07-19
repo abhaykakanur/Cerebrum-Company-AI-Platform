@@ -34,10 +34,15 @@ from cerebrum.core.state import ApplicationState
 from cerebrum.events.dispatcher import EventDispatcher
 from cerebrum.infrastructure.cache.manager import RedisClientManager
 from cerebrum.infrastructure.database.manager import PostgresClientManager
+from cerebrum.infrastructure.embeddings.providers import HashingEmbeddingProvider
 from cerebrum.infrastructure.graph.manager import Neo4jClientManager
 from cerebrum.infrastructure.search.manager import OpenSearchClientManager
 from cerebrum.infrastructure.storage.manager import MinIOClientManager
 from cerebrum.infrastructure.vector.manager import QdrantClientManager
+from cerebrum.repositories.opensearch.search_index_repository import (
+    SearchIndexRepository,
+)
+from cerebrum.repositories.qdrant.vector_repository import VectorRepository
 
 _logger = get_logger("cerebrum.core")
 
@@ -111,6 +116,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             if name not in connected
         ],
     )
+
+    # Unlike OpenSearch (which auto-creates an index on first write),
+    # Qdrant does not auto-create a collection — every embedding upsert
+    # against a fresh instance fails until this runs once. Both
+    # ensure_collection()/ensure_index() are idempotent (a no-op if
+    # already present), so calling them on every startup is safe.
+    if state.qdrant.is_connected:
+        await VectorRepository(
+            state.qdrant.client, vector_size=HashingEmbeddingProvider().dimension
+        ).ensure_collection()
+    if state.opensearch.is_connected:
+        await SearchIndexRepository(state.opensearch.client).ensure_index()
 
     _logger.info("startup.complete")
     yield

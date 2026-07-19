@@ -131,6 +131,11 @@ async def _headers(
     )
 
 
+class _FakeKnowledgePreparationService:
+    async def prepare(self, *args, **kwargs):
+        return None
+
+
 class _FakeUploader:
     async def upload(
         self, *, object_key: str, content: bytes, content_type: str, size_bytes: int
@@ -194,6 +199,7 @@ def connector_dependency_overrides(
         virus_scanner=NoOpVirusScanner(),
         settings=DocumentSettings(max_file_size_bytes=1_000_000, allowed_mime_types=[]),
         audit_service=audit,
+        preparation_service=_FakeKnowledgePreparationService(),  # type: ignore[arg-type]
     )
     sync_service = ConnectorSyncService(
         connector_service=connector_service,

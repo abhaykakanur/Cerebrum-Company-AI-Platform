@@ -16,6 +16,9 @@ import hashlib
 import uuid
 
 from cerebrum.application.auth.audit_service import AuditService
+from cerebrum.application.knowledge.knowledge_preparation_service import (
+    KnowledgePreparationService,
+)
 from cerebrum.application.knowledge.version_service import VersionService
 from cerebrum.config.documents import DocumentSettings
 from cerebrum.infrastructure.database.models.audit import AuditEventType
@@ -48,6 +51,7 @@ class UploadService:
         virus_scanner: VirusScanner,
         settings: DocumentSettings,
         audit_service: AuditService,
+        preparation_service: KnowledgePreparationService,
     ) -> None:
         self._versions = version_service
         self._documents = document_repository
@@ -55,6 +59,7 @@ class UploadService:
         self._scanner = virus_scanner
         self._settings = settings
         self._audit = audit_service
+        self._preparation = preparation_service
 
     async def upload_new_version(
         self,
@@ -176,6 +181,8 @@ class UploadService:
                 "upload_status": upload_status.value,
             },
         )
+        if upload_status is UploadStatus.STORED:
+            await self._preparation.prepare(version.id, workspace_id=workspace_id)
         return version
 
     async def delete_stored_object(self, storage_path: str) -> None:

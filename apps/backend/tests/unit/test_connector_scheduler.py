@@ -75,6 +75,11 @@ async def _tenant(session: AsyncSession) -> tuple[uuid.UUID, uuid.UUID, uuid.UUI
     return org.id, workspace.id, user.id
 
 
+class _FakeKnowledgePreparationService:
+    async def prepare(self, *args, **kwargs):
+        return None
+
+
 class _FakeUploader:
     async def upload(
         self, *, object_key: str, content: bytes, content_type: str, size_bytes: int
@@ -130,6 +135,7 @@ def _scheduler(session: AsyncSession) -> ConnectorScheduler:
         virus_scanner=NoOpVirusScanner(),
         settings=DocumentSettings(max_file_size_bytes=1_000_000, allowed_mime_types=[]),
         audit_service=audit,
+        preparation_service=_FakeKnowledgePreparationService(),  # type: ignore[arg-type]
     )
 
     def handler(request: httpx.Request) -> httpx.Response:

@@ -417,7 +417,7 @@ class ConnectorSyncService:
         assert document_id is not None
 
         try:
-            version = await self._uploads.upload_new_version(
+            await self._uploads.upload_new_version(
                 document_id,
                 workspace_id=workspace_id,
                 filename=content.filename,
@@ -431,7 +431,9 @@ class ConnectorSyncService:
             await self._sync_mappings.update(mapping)
             return "failed"
 
-        await self._knowledge_preparation.prepare(version.id, workspace_id=workspace_id)
+        # UploadService.upload_new_version now runs the knowledge
+        # preparation pipeline itself on a successful store, so no
+        # separate call is made here — see that method's docstring.
 
         mapping.external_url = item.external_url
         mapping.external_updated_at = item.updated_at

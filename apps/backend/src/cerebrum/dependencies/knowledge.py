@@ -125,7 +125,13 @@ def get_collection_service(session: DbSessionDep) -> CollectionService:
 
 
 def get_upload_service(
-    session: DbSessionDep, minio_client: MinIODep, settings: SettingsDep
+    session: DbSessionDep,
+    minio_client: MinIODep,
+    settings: SettingsDep,
+    neo4j_driver: Neo4jDep,
+    qdrant_client: QdrantDep,
+    opensearch_client: OpenSearchDep,
+    event_dispatcher: EventDispatcherDep,
 ) -> UploadService:
     return UploadService(
         version_service=get_version_service(session),
@@ -134,6 +140,15 @@ def get_upload_service(
         virus_scanner=NoOpVirusScanner(),
         settings=settings.documents,
         audit_service=AuditService(AuditEventRepository(session)),
+        preparation_service=get_knowledge_preparation_service(
+            session,
+            minio_client,
+            neo4j_driver,
+            qdrant_client,
+            opensearch_client,
+            settings,
+            event_dispatcher,
+        ),
     )
 
 

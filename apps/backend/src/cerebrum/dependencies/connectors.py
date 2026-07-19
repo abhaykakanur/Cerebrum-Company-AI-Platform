@@ -80,7 +80,15 @@ def get_connector_sync_service(
         sync_run_repository=get_connector_sync_run_repository(session),
         sync_mapping_repository=get_connector_sync_mapping_repository(session),
         document_service=get_document_service(session),
-        upload_service=get_upload_service(session, minio_client, settings),
+        upload_service=get_upload_service(
+            session,
+            minio_client,
+            settings,
+            neo4j_driver,
+            qdrant_client,
+            opensearch_client,
+            event_dispatcher,
+        ),
         knowledge_preparation_service=get_knowledge_preparation_service(
             session,
             minio_client,
