@@ -24,6 +24,8 @@ from typing import Annotated
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class SecuritySettings(BaseSettings):
     """Allowed-host/CORS policy plus the Identity & Security platform's
@@ -34,7 +36,7 @@ class SecuritySettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="SECURITY_",
         extra="ignore",

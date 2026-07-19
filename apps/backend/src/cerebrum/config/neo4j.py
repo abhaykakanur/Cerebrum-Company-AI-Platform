@@ -8,12 +8,14 @@ Neo4j's role as the authoritative relationship datastore.
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class Neo4jSettings(BaseSettings):
     """Connection parameters for the graph datastore."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="NEO4J_",
         extra="ignore",

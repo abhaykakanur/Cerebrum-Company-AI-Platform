@@ -10,12 +10,14 @@ before its first concrete worker is registered in a later phase.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class WorkerSettings(BaseSettings):
     """Background-runtime sizing. Not consumed by any running process yet."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="WORKER_",
         extra="ignore",

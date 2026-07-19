@@ -10,6 +10,8 @@ docs/architecture/specification/38_Observability.md.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class MonitoringSettings(BaseSettings):
     """Whether observability integrations are active. Both default to
@@ -19,7 +21,7 @@ class MonitoringSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="MONITORING_",
         extra="ignore",

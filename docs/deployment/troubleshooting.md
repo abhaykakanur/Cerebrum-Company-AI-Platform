@@ -10,7 +10,7 @@
      container exits immediately, or `docker compose up` errors with
      "port is already allocated." Fix: change the corresponding
      `*_PORT` variable in your local `.env`, then `scripts/stop.sh &&
-     scripts/start.sh`.
+scripts/start.sh`.
    - **Stale volume from an incompatible previous version** — symptom:
      a service crash-loops with a data-format or migration error in its
      logs immediately after you pulled a Docker image update. Fix:
@@ -36,6 +36,38 @@ from `.env.example` if missing. If you're invoking `docker compose`
 directly instead of through the scripts, make sure to pass
 `--env-file .env` explicitly and run the command from the repository
 root — see `docs/deployment/docker-architecture.md`.
+
+## Backend/Alembic Rejects Your Real Credentials (`role "cerebrum" does not exist`, or similar, despite `.env` being correct)
+
+Symptom: `.env` at the repository root has your real `POSTGRES_USER`/
+`POSTGRES_PASSWORD`/`POSTGRES_DB`, but `uv run alembic upgrade head` (or
+`uv run uvicorn cerebrum.main:app`) still fails to authenticate, and the
+error mentions the _default_ placeholder values (`cerebrum` /
+`changeme-local-only`) rather than the ones you actually set.
+
+Cause: every `Settings` subclass (`cerebrum.config.*`) loads its
+`.env` via `cerebrum.config.ENV_FILE`, which is resolved from this
+package's own file location (walking up to the `pnpm-workspace.yaml`
+workspace-root marker), not from the process's current working
+directory — but versions of this fix predating this note used a bare
+`env_file=".env"`, which pydantic-settings resolves relative to CWD. If
+you're on a checkout old enough to predate the fix, or you've moved
+`apps/backend` out of the monorepo (so no `pnpm-workspace.yaml` is
+findable above it), settings silently fall back to their hardcoded
+defaults instead of raising — the empty/wrong config is never reported
+as an error, only surfaced indirectly as an authentication failure
+against whatever datastore.
+
+Fix: pull the current `cerebrum.config.__init__.ENV_FILE` fix (verify
+with `uv run python -c "from cerebrum.config import ENV_FILE; print(ENV_FILE, ENV_FILE.exists())"`
+from `apps/backend/` — it must print the repository root's `.env` and
+`True`). If you've relocated the backend package outside a
+`pnpm-workspace.yaml`-rooted checkout, `ENV_FILE` falls back to
+`Path(__file__)`'s own directory; either restore the marker file above
+it or set the real environment variables directly instead of relying on
+`.env` autoloading (pydantic-settings still reads real `POSTGRES_*` env
+vars if a process's actual environment sets them, `.env` is only a
+convenience for local development).
 
 ## MinIO Bucket Wasn't Created
 
@@ -73,7 +105,7 @@ Several settings in `docker-compose.yml` are explicitly local-development
 shortcuts, each commented in place:
 
 - **OpenSearch security plugin is disabled** (`DISABLE_SECURITY_PLUGIN:
-  "true"`). Production MUST enable it with proper TLS and role-based
+"true"`). Production MUST enable it with proper TLS and role-based
   access — this is explicitly out of scope for this milestone and tracked
   in `docs/architecture/specification/49_Open_Questions.md`, Open
   Question 55.
@@ -111,7 +143,7 @@ As of CIS Phase 1 Prompt 7, `Settings` refuses to start in a
 `changeme-local-only*` default — see
 `docs/deployment/production-deployment.md`'s "Startup Now Refuses to
 Boot on Default Secrets". This is not a bug: rotate the specific
-variable named in the error message. If you see this in *local*
+variable named in the error message. If you see this in _local_
 development, you've almost certainly set `ENVIRONMENT=production`
 locally by mistake — it should be `development` or `testing`.
 

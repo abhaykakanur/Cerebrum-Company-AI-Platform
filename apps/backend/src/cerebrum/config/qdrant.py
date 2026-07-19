@@ -8,12 +8,14 @@ Qdrant's role as the authoritative vector datastore.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class QdrantSettings(BaseSettings):
     """Connection parameters for the vector datastore."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="QDRANT_",
         extra="ignore",

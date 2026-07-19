@@ -8,12 +8,14 @@ MinIO's role as the authoritative object-storage datastore.
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class MinIOSettings(BaseSettings):
     """Connection parameters for the object-storage datastore."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="MINIO_",
         extra="ignore",

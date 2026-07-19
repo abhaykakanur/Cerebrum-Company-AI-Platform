@@ -13,6 +13,8 @@ re-declaring its own retry/backoff fields.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class InfrastructureSettings(BaseSettings):
     """Retry and timeout policy for infrastructure client connection
@@ -20,7 +22,7 @@ class InfrastructureSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="INFRA_",
         extra="ignore",

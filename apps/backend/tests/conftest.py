@@ -16,6 +16,7 @@ from collections.abc import AsyncIterator, Iterator
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from pydantic_settings import BaseSettings
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -28,6 +29,53 @@ from cerebrum.dependencies.database import get_db_session
 from cerebrum.infrastructure.database import models as _models  # noqa: F401
 from cerebrum.infrastructure.database.base import Base
 from cerebrum.infrastructure.database.engine import create_engine
+
+
+def _settings_classes() -> list[type[BaseSettings]]:
+    """``Settings`` itself plus every nested ``BaseSettings`` subclass it's
+    composed of (``PostgresSettings``, ``SecuritySettings``, ...) —
+    discovered reflectively from ``Settings.model_fields`` so this list
+    can't silently drift as new subsystems are added, unlike a
+    hand-maintained one.
+    """
+    classes: list[type[BaseSettings]] = [Settings]
+    for field in Settings.model_fields.values():
+        annotation = field.annotation
+        if isinstance(annotation, type) and issubclass(annotation, BaseSettings):
+            classes.append(annotation)
+    return classes
+
+
+@pytest.fixture(autouse=True)
+def _isolate_dotenv_from_tests() -> Iterator[None]:
+    """No test may depend on what a contributor's real repository-root
+    ``.env`` happens to contain. ``cerebrum.config.ENV_FILE`` is
+    deliberately resolved independent of the current working directory
+    (see that module's docstring — it used to be CWD-relative, which
+    silently broke `alembic`/`uvicorn` invocations from `apps/backend/`)
+    so the real application reliably finds it — but that same
+    reliability means every ``BaseSettings`` subclass would otherwise
+    silently pick up a developer's actual local credentials during a
+    test run instead of falling through to its intended hardcoded
+    default. That's exactly what
+    ``test_production_rejects_each_default_secret_placeholder`` (see
+    ``test_configuration.py``) asserts about: it deletes an env var and
+    expects the *hardcoded* placeholder to still be there, not whatever
+    a real `.env` happens to say. Patched once here, for every test,
+    since no test should ever be sensitive to ambient `.env` content —
+    an explicit ``monkeypatch.setenv(...)`` inside a test still wins
+    (environment variables outrank `.env` file values in pydantic-settings'
+    precedence), so this doesn't change any test that already sets what
+    it needs directly.
+    """
+    originals = [(cls, cls.model_config.get("env_file")) for cls in _settings_classes()]
+    for cls, _ in originals:
+        cls.model_config["env_file"] = None
+    try:
+        yield
+    finally:
+        for cls, original in originals:
+            cls.model_config["env_file"] = original
 
 
 @pytest.fixture

@@ -11,6 +11,8 @@ from enum import StrEnum
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class LogLevel(StrEnum):
     TRACE = "trace"
@@ -33,7 +35,7 @@ class LoggingSettings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore"
     )
 
     log_level: LogLevel = Field(

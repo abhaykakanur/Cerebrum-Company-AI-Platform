@@ -14,6 +14,7 @@ from functools import lru_cache
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
 from cerebrum.config.ai import AISettings
 from cerebrum.config.api import APISettings
 from cerebrum.config.application import ApplicationSettings
@@ -55,7 +56,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore", frozen=True
+        env_file=ENV_FILE, env_file_encoding="utf-8", extra="ignore", frozen=True
     )
 
     application: ApplicationSettings = Field(default_factory=ApplicationSettings)

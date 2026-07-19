@@ -8,12 +8,14 @@ for OpenSearch's role in the hybrid search pipeline.
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class OpenSearchSettings(BaseSettings):
     """Connection parameters for the keyword/hybrid search datastore."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="OPENSEARCH_",
         extra="ignore",

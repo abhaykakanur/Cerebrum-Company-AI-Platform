@@ -11,12 +11,14 @@ docs/architecture/specification/42_Database_Responsibilities.md.
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class PostgresSettings(BaseSettings):
     """Connection parameters for the authoritative relational datastore."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="POSTGRES_",
         extra="ignore",

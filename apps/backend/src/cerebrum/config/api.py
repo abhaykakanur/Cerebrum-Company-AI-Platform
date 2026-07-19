@@ -7,12 +7,14 @@ docs/architecture/specification/81_API_Standards.md (API Versioning).
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from cerebrum.config import ENV_FILE
+
 
 class APISettings(BaseSettings):
     """Where the ASGI server binds, and the API's versioning surface."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_FILE,
         env_file_encoding="utf-8",
         env_prefix="BACKEND_",
         extra="ignore",
